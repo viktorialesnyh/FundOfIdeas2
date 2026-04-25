@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дневник - Фонд Идей</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/diary.css') }}">
 </head>
@@ -14,7 +15,7 @@
             <a href="{{ url_for('dashboard') }}">Главная</a>
             <a href="{{ url_for('ideas') }}">Мои идеи</a>
             <a href="{{ url_for('diary') }}" class="active">Дневник</a>
-            <a href="#">Команда</a>
+            <a href="{{ url_for('team') }}">Команда</a>
             <a href="{{ url_for('profile') }}">Профиль</a>
         </div>
         <div class="nav-user">
@@ -26,13 +27,12 @@
     <main class="diary-main">
         <div class="diary-header">
             <h1>Дневник прогресса</h1>
-            <button class="btn-add" id="toggleFormBtn">+ Запись</button>
+            <button class="btn-add" onclick="toggleForm()">+ Запись</button>
         </div>
 
-        <!-- Форма добавления -->
-        <div class="entry-form-container hidden" id="entryFormContainer">
-            <form method="POST" class="entry-form">
-                <textarea name="entry_text" placeholder="Что сделано сегодня? Какие планы или проблемы?" required></textarea>
+        <div class="entry-form-container hidden" id="entryForm">
+            <form class="entry-form" method="POST" action="{{ url_for('add_entry') }}">
+                <textarea name="text" placeholder="Опишите ваш прогресс, план или проблему..." required></textarea>
                 <div class="form-actions">
                     <div class="tag-selector">
                         <label><input type="radio" name="tag" value="success" checked> 🟢 Успех</label>
@@ -44,14 +44,13 @@
             </form>
         </div>
 
-        <!-- Лента записей -->
-        <div class="timeline" id="timeline">
+        <div class="timeline">
             {% if entries %}
                 {% for entry in entries %}
                 <div class="timeline-item">
                     <div class="timeline-date">{{ entry.date }}</div>
                     <div class="timeline-content">
-                        <span class="tag tag-{{ entry.tag }}">
+                        <span class="tag {{ 'tag-' + entry.tag }}">
                             {% if entry.tag == 'success' %}🟢 Успех
                             {% elif entry.tag == 'plan' %}🔵 Планы
                             {% else %}🔴 Проблема{% endif %}
@@ -69,12 +68,17 @@
                     <div class="empty-icon">📖</div>
                     <h3>Пока нет записей</h3>
                     <p>Начните вести историю проекта. Фиксируйте успехи, планы и задачи.</p>
-                    <button class="btn-add" onclick="document.getElementById('toggleFormBtn').click()">Сделать первую запись</button>
+                    <button class="btn-primary" onclick="toggleForm()">Сделать первую запись</button>
                 </div>
             {% endif %}
         </div>
     </main>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        function toggleForm() {
+            const form = document.getElementById('entryForm');
+            form.classList.toggle('hidden');
+        }
+    </script>
 </body>
 </html>
