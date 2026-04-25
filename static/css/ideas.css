@@ -1,74 +1,67 @@
-/* === СТРАНИЦА МОИ ИДЕИ === */
-.ideas-main { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
-
-.ideas-header {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+/* === МОИ ИДЕИ - Journal Craft === */
+.ideas-main { max-width: 1100px; margin: 48px auto; padding: 0 20px; }
+.ideas-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+.ideas-header h1 {
+  font-size: 2.6rem; color: var(--text-ink); margin: 0; font-family: 'Cormorant Garamond', serif;
+  font-weight: 500; letter-spacing: -0.02em;
 }
-.ideas-header h1 { font-size: 1.8rem; color: #111827; margin: 0; }
-
 .btn-create {
-    background: #374151; color: white; border: none; padding: 10px 20px;
-    border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s;
+  background: var(--accent-binding); color: white; border: none; padding: 12px 24px;
+  border-radius: var(--radius-sm); font-weight: 500; cursor: pointer; transition: var(--transition-base);
 }
-.btn-create:hover { background: #1f2937; }
+.btn-create:hover { background: var(--accent-binding-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139, 58, 58, 0.25); }
 
-.ideas-controls {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
-}
-
-.filters { display: flex; gap: 10px; }
+.ideas-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+.filters { display: flex; gap: 8px; }
 .filter-btn {
-    background: white; border: 1px solid #e5e7eb; padding: 8px 16px;
-    border-radius: 20px; cursor: pointer; font-size: 0.9rem; color: #4b5563; transition: 0.2s;
+  background: var(--bg-white); border: 1px solid var(--border-paper); padding: 8px 18px;
+  border-radius: 24px; cursor: pointer; font-size: 0.9rem; color: var(--text-pencil); transition: var(--transition-base);
+  font-weight: 500;
 }
-.filter-btn.active, .filter-btn:hover {
-    background: #374151; color: white; border-color: #374151;
-}
+.filter-btn.active, .filter-btn:hover { background: var(--bg-edge); color: var(--text-ink); border-color: var(--accent-foil); }
 
 .search-box input {
-    padding: 10px 15px; border: 1px solid #e5e7eb; border-radius: 8px;
-    width: 250px; outline: none; font-size: 0.9rem;
+  padding: 10px 16px; border: 1.5px solid var(--border-dark); border-radius: var(--radius-sm);
+  width: 250px; outline: none; font-size: 0.9rem; background: var(--bg-white); transition: var(--transition-base);
 }
-.search-box input:focus { border-color: #374151; }
+.search-box input:focus { border-color: var(--accent-binding); box-shadow: 0 0 0 3px rgba(139, 58, 58, 0.08); }
 
-/* Сетка карточек */
-.ideas-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;
-}
-
+.ideas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
 .idea-card {
-    background: white; border: 1px solid #e5e7eb; border-radius: 12px;
-    padding: 20px; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column;
+  background: var(--bg-white); border: 1px solid var(--border-paper); border-radius: var(--radius-md);
+  padding: 24px; transition: var(--transition-base); display: flex; flex-direction: column;
+  box-shadow: var(--shadow-card); position: relative;
 }
-.idea-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+.idea-card::after {
+  content: ''; position: absolute; top: 16px; right: 16px; width: 4px; height: 24px;
+  background: var(--accent-foil); border-radius: 2px; opacity: 0; transition: opacity 0.2s;
+}
+.idea-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-medium); border-color: var(--border-dark); }
+.idea-card:hover::after { opacity: 1; }
 
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.date { font-size: 0.8rem; color: #9ca3af; }
+.date { font-size: 0.8rem; color: var(--text-pencil); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
+.badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: 500; border: 1px solid transparent; }
+.badge.published { background: rgba(6, 95, 70, 0.08); color: #065f46; border-color: rgba(6, 95, 70, 0.2); }
+.badge.draft { background: var(--bg-edge); color: var(--text-pencil); border-color: var(--border-paper); }
 
-.badge {
-    font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 500;
-}
-.badge.published { background: #d1fae5; color: #065f46; }
-.badge.draft { background: #f3f4f6; color: #4b5563; }
+.idea-card h3 { font-size: 1.15rem; margin: 0 0 8px 0; color: var(--text-ink); font-weight: 600; line-height: 1.3; }
+.idea-card p { font-size: 0.9rem; color: var(--text-pencil); line-height: 1.6; margin-bottom: 16px; flex-grow: 1; }
 
-.idea-card h3 { font-size: 1.1rem; margin: 0 0 8px 0; color: #111827; }
-.idea-card p { font-size: 0.9rem; color: #4b5563; line-height: 1.5; margin-bottom: 15px; flex-grow: 1; }
-
-.card-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+.card-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
 .card-tags span {
-    background: #f9fafb; border: 1px solid #e5e7eb; padding: 4px 10px;
-    border-radius: 6px; font-size: 0.8rem; color: #6b7280;
+  background: var(--bg-edge); border: 1px solid var(--border-paper); padding: 4px 12px;
+  border-radius: 20px; font-size: 0.8rem; color: var(--text-ink); transition: var(--transition-base);
 }
+.card-tags span:hover { border-color: var(--accent-foil); background: var(--bg-white); }
 
 .card-actions { display: flex; gap: 10px; margin-top: auto; }
 .action-btn {
-    flex: 1; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
+  flex: 1; padding: 10px; border: none; border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 0.9rem; font-weight: 500; transition: var(--transition-base);
 }
-.action-btn { background: #374151; color: white; }
-.action-btn:hover { background: #1f2937; }
-.action-btn.outline { background: white; border: 1px solid #d1d5db; color: #374151; }
-.action-btn.outline:hover { background: #f9fafb; }
-
-/* Скрытие карточек при фильтрации */
+.action-btn { background: var(--accent-binding); color: white; }
+.action-btn:hover { background: var(--accent-binding-hover); transform: translateY(-1px); }
+.action-btn.outline { background: transparent; border: 1.5px solid var(--border-dark); color: var(--text-ink); }
+.action-btn.outline:hover { background: var(--bg-edge); border-color: var(--accent-foil); }
 .idea-card.hidden { display: none; }
