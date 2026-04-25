@@ -4,53 +4,91 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Фонд Идей — Вход</title>
-    <!-- Подключаем общий стиль -->
+    <!-- Подключение шрифтов для стиля Journal Craft -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
+<!-- Класс auth-body делает фон градиентным -->
 <body class="auth-body">
     <div class="auth-container">
         <div class="auth-left">
-            <div class="star-icon">★</div>
-            <div class="project-title">Фонд Идей</div>
+            <span class="star-icon">★</span>
+            <h1 class="project-title">Фонд Идей</h1>
         </div>
-
         <div class="auth-right">
             <div class="tabs">
-                <button class="tab-btn active" id="loginTab" onclick="switchTab('login')">Вход</button>
-                <button class="tab-btn" id="registerTab" onclick="switchTab('register')">Регистрация</button>
+                <button class="tab-btn active" onclick="switchTab('login')">Вход</button>
+                <button class="tab-btn" onclick="switchTab('register')">Регистрация</button>
             </div>
 
             <!-- Форма Входа -->
-            <div id="loginForm">
+            <form id="login-form" class="auth-form" method="POST" action="{{ url_for('login') }}">
                 <h2>Добро пожаловать</h2>
                 <p class="subtitle">Войдите в свой аккаунт</p>
-                <form action="/login" method="POST">
-                    <div class="input-group"><label>Email</label><input type="email" name="email" placeholder="name@example.com" required></div>
-                    <div class="input-group"><label>Пароль</label><input type="password" name="password" placeholder="••••••••" required></div>
-                    <button type="submit" class="primary-btn">Войти</button>
-                </form>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="your@email.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Пароль</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="primary-btn">Войти</button>
                 <div class="divider"><span>или</span></div>
-                <button class="secondary-btn">Через Google</button>
-            </div>
+                <button type="button" class="secondary-btn">Через Google</button>
+            </form>
 
             <!-- Форма Регистрации -->
-            <div id="registerForm" class="hidden">
+            <form id="register-form" class="auth-form hidden" method="POST" action="{{ url_for('register') }}">
                 <h2>Создать аккаунт</h2>
                 <p class="subtitle">Начните свой путь в Фонде Идей</p>
-                <form action="/register" method="POST">
-                    <div class="input-group"><label>Имя</label><input type="text" name="username" placeholder="Иван Иванов" required></div>
-                    <div class="input-group"><label>Email</label><input type="email" name="email" placeholder="name@example.com" required></div>
-                    <div class="input-group"><label>Пароль</label><input type="password" name="password" placeholder="••••••••" required></div>
-                    <div class="input-group"><label>Подтверждение пароля</label><input type="password" name="confirm_password" placeholder="••••••••" required></div>
-                    <div class="checkbox-group"><input type="checkbox" required><span>Я согласен с <a href="#">Условиями использования</a></span></div>
-                    <button type="submit" class="primary-btn">Зарегистрироваться</button>
-                </form>
+                <div class="input-group">
+                    <label>Имя</label>
+                    <input type="text" name="username" placeholder="Ваше имя" required>
+                </div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="your@email.com" required>
+                </div>
+                <div class="input-group">
+                    <label>Пароль</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <div class="input-group">
+                    <label>Подтверждение пароля</label>
+                    <input type="password" name="confirm_password" placeholder="••••••••" required>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="terms" required>
+                    <label for="terms">Я согласен с <a href="#">Условиями использования</a></label>
+                </div>
+                <button type="submit" class="primary-btn">Зарегистрироваться</button>
                 <div class="divider"><span>или</span></div>
-                <button class="secondary-btn">Через Google</button>
-            </div>
+                <button type="button" class="secondary-btn">Через Google</button>
+            </form>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        function switchTab(tab) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const tabs = document.querySelectorAll('.tab-btn');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                tabs[0].classList.remove('active');
+                tabs[1].classList.add('active');
+            }
+        }
+    </script>
 </body>
 </html>
