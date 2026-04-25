@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои идеи - Фонд Идей</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ideas.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body class="dash-body">
+    <!-- Навбар -->
+    <nav class="navbar">
+        <div class="nav-brand">💡 Фонд Идей</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Главная</a>
+            <a href="{{ url_for('ideas') }}" class="active">Мои идеи</a>
+            <a href="{{ url_for('diary') }}">Дневник</a>
+            <a href="{{ url_for('team') }}">Команда</a>
+            <a href="{{ url_for('profile') }}">Профиль</a>
+        </div>
+        <div class="nav-user">
+            <span>{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Выйти</a>
+        </div>
+    </nav>
+
+    <main class="ideas-main">
+        <div class="ideas-header">
+            <h1>Мои идеи</h1>
+            <button class="btn-create" onclick="alert('Модальное окно создания идеи будет здесь')">+ Создать идею</button>
+        </div>
+
+        <!-- Панель управления -->
+        <div class="ideas-controls">
+            <div class="filters">
+                <button class="filter-btn active" data-filter="all">Все</button>
+                <button class="filter-btn" data-filter="draft">Черновики</button>
+                <button class="filter-btn" data-filter="published">Опубликованные</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Поиск по названию...">
+            </div>
+        </div>
+
+        <!-- Сетка идей -->
+        <div class="ideas-grid" id="ideasGrid">
+                {% if session.get('ideas') %}
+                {% for idea in session['ideas']|reverse %}
+                <div class="idea-card" data-status="{{ idea.visibility}}">
+                    <div class="card-header">
+                        <span class="badge {{ 'published' if idea.visibility == 'published' else ('private' if idea.visibility == 'private' else 'draft') }}">
+                            {{ '🌍 Опубликована' if idea.visibility == 'published' else ('🔒 Приватная' if idea.visibility == 'private' else '📝 Черновик') }}
+                        </span>
+                        <span class="date">{{ idea.date }}</span>
+                    </div>
+                    <h3>{{ idea.title }}</h3>
+                    <p>{{ idea.description }}</p>
+                    <div class="card-tags">
+                        {% for tag in idea.tags %}
+                        <span>{{ tag }}</span>
+                        {% endfor %}
+                        <span class="license-badge">
+                            {{ '© Все права' if idea.license == 'all_rights' else 
+                               'CC BY' if idea.license == 'cc_by' else 
+                               'CC BY-SA' if idea.license == 'cc_by_sa' else 
+                               'CC BY-NC' if idea.license == 'cc_by_nc' else 
+                               'MIT' if idea.license == 'mit' else 
+                               'Public Domain' }}
+                        </span>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="action-btn">Открыть</button>
+                        <button class="action-btn outline">Редактировать</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">💡</div>
+                    <h3>У вас пока нет идей</h3>
+                    <p>Создайте первую идею и начните свой проект!</p>
+                    <button class="btn-create" onclick="openModal()">+ Создать идею</button>
+                </div>
+            {% endif %}
+        </div>
+         <!-- Модальное окно создания идеи -->
+    <div id="createIdeaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Создать новую идею</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form method="POST" action="/create_idea" class="idea-form">
+                <div class="form-group">
+                    <label>Название идеи *</label>
+                    <input type="text" name="title" placeholder="Например: AI-помощник для студентов" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание *</label>
+                    <textarea name="description" rows="4" placeholder="Опишите вашу идею подробно..." required></textarea>
+                </div>
+                                <div class="form-row">
+                    <div class="form-group">
+                        <label>Категория</label>
+                        <select name="category">
+                            <option value="edtech">EdTech</option>
+                            <option value="health">HealthTech</option>
+                            <option value="fintech">FinTech</option>
+                            <option value="other">Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Видимость</label>
+                        <select name="visibility">
+                            <option value="draft">📝 Черновик</option>
+                            <option value="private">🔒 Приватная</option>
+                            <option value="published">🌍 Опубликовать</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Лицензия</label>
+                    <select name="license">
+                        <option value="all_rights">© Все права защищены</option>
+                        <option value="cc_by">CC BY (с указанием автора)</option>
+                        <option value="cc_by_sa">CC BY-SA (с той же лицензией)</option>
+                        <option value="cc_by_nc">CC BY-NC (некоммерческая)</option>
+                        <option value="mit">MIT License (открытый код)</option>
+                        <option value="public_domain">🌍 Public Domain</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Теги (через запятую)</label>
+                    <input type="text" name="tags" placeholder="Python, AI, Mobile">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Отмена</button>
+                    <button type="submit" class="btn-create-idea">Создать идею</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

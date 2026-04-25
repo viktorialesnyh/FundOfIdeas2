@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дневник - Фонд Идей</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/diary.css') }}">
+</head>
+<body class="dash-body">
+    <nav class="navbar">
+        <div class="nav-brand">💡 Фонд Идей</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Главная</a>
+            <a href="{{ url_for('ideas') }}">Мои идеи</a>
+            <a href="{{ url_for('diary') }}" class="active">Дневник</a>
+            <a href="#">Команда</a>
+            <a href="{{ url_for('profile') }}">Профиль</a>
+        </div>
+        <div class="nav-user">
+            <span>{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Выйти</a>
+        </div>
+    </nav>
+
+    <main class="diary-main">
+        <div class="diary-header">
+            <h1>Дневник прогресса</h1>
+            <button class="btn-add" id="toggleFormBtn">+ Запись</button>
+        </div>
+
+        <!-- Форма добавления -->
+        <div class="entry-form-container hidden" id="entryFormContainer">
+            <form method="POST" class="entry-form">
+                <textarea name="entry_text" placeholder="Что сделано сегодня? Какие планы или проблемы?" required></textarea>
+                <div class="form-actions">
+                    <div class="tag-selector">
+                        <label><input type="radio" name="tag" value="success" checked> 🟢 Успех</label>
+                        <label><input type="radio" name="tag" value="plan"> 🔵 Планы</label>
+                        <label><input type="radio" name="tag" value="issue"> 🔴 Проблема</label>
+                    </div>
+                    <button type="submit" class="btn-submit">Сохранить</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Лента записей -->
+        <div class="timeline" id="timeline">
+            {% if entries %}
+                {% for entry in entries %}
+                <div class="timeline-item">
+                    <div class="timeline-date">{{ entry.date }}</div>
+                    <div class="timeline-content">
+                        <span class="tag tag-{{ entry.tag }}">
+                            {% if entry.tag == 'success' %}🟢 Успех
+                            {% elif entry.tag == 'plan' %}🔵 Планы
+                            {% else %}🔴 Проблема{% endif %}
+                        </span>
+                        <p>{{ entry.text }}</p>
+                        <div class="item-actions">
+                            <button class="action-btn-small">Редактировать</button>
+                            <button class="action-btn-small delete">Удалить</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📖</div>
+                    <h3>Пока нет записей</h3>
+                    <p>Начните вести историю проекта. Фиксируйте успехи, планы и задачи.</p>
+                    <button class="btn-add" onclick="document.getElementById('toggleFormBtn').click()">Сделать первую запись</button>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
