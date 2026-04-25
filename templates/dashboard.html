@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фонд Идей — Главная</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
+        .card-link .action-card { height: 100%; transition: transform 0.2s, box-shadow 0.2s; }
+        .card-link:hover .action-card { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+    </style>
+</head>
+<body class="dash-body">
+    <nav class="navbar">
+        <div class="nav-brand">💡 Фонд Идей</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}" class="active">Главная</a>
+            <a href="{{ url_for('ideas') }}">Мои идеи</a>
+            <a href="{{ url_for('diary') }}">Дневник</a>
+            <a href="{{ url_for('team') }}">Команда</a>
+            <a href="{{ url_for('profile') }}">Профиль</a>
+        </div>
+        <div class="nav-user">
+            <span>{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Выйти</a>
+        </div>
+    </nav>
+
+    <main class="dashboard-main">
+        <div class="welcome-block">
+            <h1>Добро пожаловать, {{ username }}! 👋</h1>
+            <p>Что вы хотите сделать сегодня?</p>
+        </div>
+
+        <div class="cards-grid">
+            <!-- 1. Создать идею -->
+            <div class="action-card" style="cursor: pointer;" onclick="openModal()">
+                <div class="card-icon">➕</div>
+                <h3>Создать идею</h3>
+                <p>Опубликуйте новую идею проекта</p>
+            </div>
+
+            <!-- 2. Запись в дневник -->
+            <a href="{{ url_for('diary') }}" class="card-link">
+                <div class="action-card">
+                    <div class="card-icon">📝</div>
+                    <h3>Запись в дневник</h3>
+                    <p>Добавьте новую запись о прогрессе</p>
+                </div>
+            </a>
+
+            <!-- 3. Найти команду -->
+            <a href="{{ url_for('team') }}" class="card-link">
+                <div class="action-card">
+                    <div class="card-icon">🤝</div>
+                    <h3>Найти команду</h3>
+                    <p>Найдите единомышленников для проекта</p>
+                </div>
+            </a>
+
+            <!-- 4. Исследовать -->
+            <a href="{{ url_for('ideas') }}" class="card-link">
+                <div class="action-card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Исследовать</h3>
+                    <p>Посмотрите идеи других участников</p>
+                </div>
+            </a>
+        </div>
+    </main>
+        <!-- Модальное окно создания идеи -->
+    <div id="createIdeaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Создать новую идею</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form method="POST" action="/create_idea" class="idea-form">
+                <div class="form-group">
+                    <label>Название идеи *</label>
+                    <input type="text" name="title" placeholder="Например: AI-помощник для студентов" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание *</label>
+                    <textarea name="description" rows="4" placeholder="Опишите вашу идею подробно..." required></textarea>
+                </div>
+                                <div class="form-row">
+                    <div class="form-group">
+                        <label>Категория</label>
+                        <select name="category">
+                            <option value="edtech">EdTech</option>
+                            <option value="health">HealthTech</option>
+                            <option value="fintech">FinTech</option>
+                            <option value="other">Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Видимость</label>
+                        <select name="visibility">
+                            <option value="draft">📝 Черновик</option>
+                            <option value="private">🔒 Приватная</option>
+                            <option value="published">🌍 Опубликовать</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Лицензия</label>
+                    <select name="license">
+                        <option value="all_rights">© Все права защищены</option>
+                        <option value="cc_by">CC BY (с указанием автора)</option>
+                        <option value="cc_by_sa">CC BY-SA (с той же лицензией)</option>
+                        <option value="cc_by_nc">CC BY-NC (некоммерческая)</option>
+                        <option value="mit">MIT License (открытый код)</option>
+                        <option value="public_domain">🌍 Public Domain</option>
+                    </select>
+                </div>
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <select name="status">
+                            <option value="draft">Черновик</option>
+                            <option value="published">Опубликовать</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Теги (через запятую)</label>
+                    <input type="text" name="tags" placeholder="Python, AI, Mobile">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Отмена</button>
+                    <button type="submit" class="btn-create-idea">Создать идею</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
