@@ -4,10 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Команда - Фонд Идей</title>
+    <!-- Шрифты для стиля Journal Craft -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/team.css') }}">
 </head>
+<!-- Класс dash-body делает фон кремовым -->
 <body class="dash-body">
+
+    <!-- Навигация -->
     <nav class="navbar">
         <div class="nav-brand">💡 Фонд Идей</div>
         <div class="nav-links">
@@ -23,21 +30,25 @@
         </div>
     </nav>
 
+    <!-- Основной контент -->
     <main class="team-main">
+
         <div class="team-header">
             <h1>Команда</h1>
             <button class="btn-create">+ Создать команду</button>
         </div>
 
-        <!-- Моя команда -->
+        <!-- Секция: Моя команда -->
         <div class="section-card">
             <div class="section-header">
                 <h2>👥 Моя команда</h2>
             </div>
+
+            <!-- Заглушка, если команды нет (логика Jinja) -->
             <div class="my-team-empty">
-                <div class="empty-icon">👤</div>
+                <div class="empty-icon">🤝</div>
                 <h3>У вас пока нет команды</h3>
-                <p>Найдите единомышленников для вашего проекта или создайте свою команду</p>
+                <p>Найдите единомышленников для вашего проекта или создайте свою команду.</p>
                 <div class="empty-actions">
                     <button class="btn-primary">Найти команду</button>
                     <button class="btn-secondary">Создать команду</button>
@@ -45,37 +56,43 @@
             </div>
         </div>
 
-        <!-- Поиск команд -->
+        <!-- Секция: Поиск команды -->
         <div class="section-card">
             <div class="section-header">
                 <h2>🔍 Найти команду</h2>
                 <div class="search-box">
-                    <input type="text" id="teamSearch" placeholder="Поиск по названию или навыкам...">
+                    <input type="text" placeholder="Поиск по проектам...">
                 </div>
             </div>
 
             <div class="filters">
-                <button class="filter-btn active" data-filter="all">Все команды</button>
-                <button class="filter-btn" data-filter="looking">Ищут участников</button>
-                <button class="filter-btn" data-filter="tech">Технологии</button>
-                <button class="filter-btn" data-filter="design">Дизайн</button>
-                <button class="filter-btn" data-filter="marketing">Маркетинг</button>
+                <button class="filter-btn active">Все команды</button>
+                <button class="filter-btn">Ищут участников</button>
+                <button class="filter-btn">Технологии</button>
+                <button class="filter-btn">Дизайн</button>
+                <button class="filter-btn">Маркетинг</button>
             </div>
 
-            <div class="teams-grid" id="teamsGrid">
-                <!-- Карточка команды 1 -->
-                <div class="team-card" data-category="tech looking">
+            <div class="teams-grid">
+
+                <!-- Карточка 1 (Пример логики Jinja) -->
+                {% for team in teams %}
+                <div class="team-card">
                     <div class="team-header-card">
                         <div class="team-info">
-                            <h3>EduTech Innovators</h3>
-                            <p class="team-project">Проект: AI-помощник для студентов</p>
+                            <h3>{{ team.name }}</h3>
+                            <p class="team-project">Проект: {{ team.project }}</p>
                         </div>
-                        <span class="badge looking">Ищут участников</span>
+                        {% if team.is_looking %}
+                            <span class="badge looking">Ищут участников</span>
+                        {% else %}
+                            <span class="badge complete">Команда собрана</span>
+                        {% endif %}
                     </div>
-                    
+
                     <div class="team-members">
-                        <div class="member-avatar" title="Иван Иванов">ИИ</div>
-                        <div class="member-avatar" title="Анна Петрова">АП</div>
+                        <div class="member-avatar">ИИ</div>
+                        <div class="member-avatar">АП</div>
                         <div class="member-avatar more">+3</div>
                     </div>
 
@@ -86,70 +103,46 @@
                     </div>
 
                     <div class="team-footer">
+                        <span class="team-location">📍 {{ team.city }}</span>
+                        {% if team.is_looking %}
+                            <button class="btn-join">Присоединиться</button>
+                        {% else %}
+                            <button class="btn-join" disabled>Заявка отправлена</button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Статические примеры из вашего текста (если цикл не нужен прямо сейчас) -->
+                <!--
+                <div class="team-card">
+                    <div class="team-header-card">
+                        <div class="team-info">
+                            <h3>EduTech Innovators</h3>
+                            <p class="team-project">Проект: AI-помощник для студентов</p>
+                        </div>
+                        <span class="badge looking">Ищут участников</span>
+                    </div>
+                    <div class="team-members">
+                        <div class="member-avatar">ИИ</div>
+                        <div class="member-avatar">АП</div>
+                        <div class="member-avatar more">+3</div>
+                    </div>
+                    <div class="team-skills">
+                        <span class="skill-tag">Python</span>
+                        <span class="skill-tag">Machine Learning</span>
+                        <span class="skill-tag">React</span>
+                    </div>
+                    <div class="team-footer">
                         <span class="team-location">📍 Москва</span>
                         <button class="btn-join">Присоединиться</button>
                     </div>
                 </div>
+                -->
 
-                <!-- Карточка команды 2 -->
-                <div class="team-card" data-category="design looking">
-                    <div class="team-header-card">
-                        <div class="team-info">
-                            <h3>Creative Hub</h3>
-                            <p class="team-project">Проект: Мобильное приложение для дизайна</p>
-                        </div>
-                        <span class="badge looking">Ищут участников</span>
-                    </div>
-                    
-                    <div class="team-members">
-                        <div class="member-avatar" title="Мария Сидорова">МС</div>
-                        <div class="member-avatar" title="Дмитрий Козлов">ДК</div>
-                    </div>
-
-                    <div class="team-skills">
-                        <span class="skill-tag">UI/UX</span>
-                        <span class="skill-tag">Figma</span>
-                        <span class="skill-tag">Mobile Design</span>
-                    </div>
-
-                    <div class="team-footer">
-                        <span class="team-location">📍 Санкт-Петербург</span>
-                        <button class="btn-join">Присоединиться</button>
-                    </div>
-                </div>
-
-                <!-- Карточка команды 3 -->
-                <div class="team-card" data-category="marketing">
-                    <div class="team-header-card">
-                        <div class="team-info">
-                            <h3>GreenTech Solutions</h3>
-                            <p class="team-project">Проект: Экологичный каршеринг</p>
-                        </div>
-                        <span class="badge complete">Команда собрана</span>
-                    </div>
-                    
-                    <div class="team-members">
-                        <div class="member-avatar" title="Алексей Смирнов">ӔС</div>
-                        <div class="member-avatar" title="Ольга Новикова">ОН</div>
-                        <div class="member-avatar" title="Павел Волков">ПВ</div>
-                        <div class="member-avatar more">+5</div>
-                    </div>
-
-                    <div class="team-skills">
-                        <span class="skill-tag">Marketing</span>
-                        <span class="skill-tag">IoT</span>
-                        <span class="skill-tag">Business</span>
-                    </div>
-
-                    <div class="team-footer">
-                        <span class="team-location">📍 Казань</span>
-                        <button class="btn-join" disabled>Заявка отправлена</button>
-                    </div>
-                </div>
             </div>
         </div>
-    </main>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    </main>
 </body>
 </html>
