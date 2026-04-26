@@ -2,10 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Команда - Фонд Идей</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/team.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body class="dash-body">
     <nav class="navbar">
@@ -25,131 +25,156 @@
 
     <main class="team-main">
         <div class="team-header">
-            <h1>Команда</h1>
-            <button class="btn-create">+ Создать команду</button>
+            <h1>Поиск команды</h1>
+            {% if my_profile %}
+                <button class="btn-edit-profile" onclick="openEditProfileModal()">✏️ Редактировать мой профиль</button>
+            {% else %}
+                <button class="btn-create" onclick="openCreateProfileModal()">+ Создать профиль участника</button>
+            {% endif %}
         </div>
 
-        <!-- Моя команда -->
-        <div class="section-card">
-            <div class="section-header">
-                <h2>👥 Моя команда</h2>
-            </div>
-            <div class="my-team-empty">
-                <div class="empty-icon">👤</div>
-                <h3>У вас пока нет команды</h3>
-                <p>Найдите единомышленников для вашего проекта или создайте свою команду</p>
-                <div class="empty-actions">
-                    <button class="btn-primary">Найти команду</button>
-                    <button class="btn-secondary">Создать команду</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Поиск команд -->
-        <div class="section-card">
-            <div class="section-header">
-                <h2>🔍 Найти команду</h2>
-                <div class="search-box">
-                    <input type="text" id="teamSearch" placeholder="Поиск по названию или навыкам...">
-                </div>
-            </div>
-
+        <!-- Фильтры -->
+        <div class="team-controls">
             <div class="filters">
-                <button class="filter-btn active" data-filter="all">Все команды</button>
-                <button class="filter-btn" data-filter="looking">Ищут участников</button>
-                <button class="filter-btn" data-filter="tech">Технологии</button>
-                <button class="filter-btn" data-filter="design">Дизайн</button>
-                <button class="filter-btn" data-filter="marketing">Маркетинг</button>
+                <button class="filter-btn active" data-filter="all">Все</button>
+                <button class="filter-btn" data-filter="team">Ищут команду</button>
+                <button class="filter-btn" data-filter="members">Ищут участников</button>
             </div>
-
-            <div class="teams-grid" id="teamsGrid">
-                <!-- Карточка команды 1 -->
-                <div class="team-card" data-category="tech looking">
-                    <div class="team-header-card">
-                        <div class="team-info">
-                            <h3>EduTech Innovators</h3>
-                            <p class="team-project">Проект: AI-помощник для студентов</p>
-                        </div>
-                        <span class="badge looking">Ищут участников</span>
-                    </div>
-                    
-                    <div class="team-members">
-                        <div class="member-avatar" title="Иван Иванов">ИИ</div>
-                        <div class="member-avatar" title="Анна Петрова">АП</div>
-                        <div class="member-avatar more">+3</div>
-                    </div>
-
-                    <div class="team-skills">
-                        <span class="skill-tag">Python</span>
-                        <span class="skill-tag">Machine Learning</span>
-                        <span class="skill-tag">React</span>
-                    </div>
-
-                    <div class="team-footer">
-                        <span class="team-location">📍 Москва</span>
-                        <button class="btn-join">Присоединиться</button>
-                    </div>
-                </div>
-
-                <!-- Карточка команды 2 -->
-                <div class="team-card" data-category="design looking">
-                    <div class="team-header-card">
-                        <div class="team-info">
-                            <h3>Creative Hub</h3>
-                            <p class="team-project">Проект: Мобильное приложение для дизайна</p>
-                        </div>
-                        <span class="badge looking">Ищут участников</span>
-                    </div>
-                    
-                    <div class="team-members">
-                        <div class="member-avatar" title="Мария Сидорова">МС</div>
-                        <div class="member-avatar" title="Дмитрий Козлов">ДК</div>
-                    </div>
-
-                    <div class="team-skills">
-                        <span class="skill-tag">UI/UX</span>
-                        <span class="skill-tag">Figma</span>
-                        <span class="skill-tag">Mobile Design</span>
-                    </div>
-
-                    <div class="team-footer">
-                        <span class="team-location">📍 Санкт-Петербург</span>
-                        <button class="btn-join">Присоединиться</button>
-                    </div>
-                </div>
-
-                <!-- Карточка команды 3 -->
-                <div class="team-card" data-category="marketing">
-                    <div class="team-header-card">
-                        <div class="team-info">
-                            <h3>GreenTech Solutions</h3>
-                            <p class="team-project">Проект: Экологичный каршеринг</p>
-                        </div>
-                        <span class="badge complete">Команда собрана</span>
-                    </div>
-                    
-                    <div class="team-members">
-                        <div class="member-avatar" title="Алексей Смирнов">ӔС</div>
-                        <div class="member-avatar" title="Ольга Новикова">ОН</div>
-                        <div class="member-avatar" title="Павел Волков">ПВ</div>
-                        <div class="member-avatar more">+5</div>
-                    </div>
-
-                    <div class="team-skills">
-                        <span class="skill-tag">Marketing</span>
-                        <span class="skill-tag">IoT</span>
-                        <span class="skill-tag">Business</span>
-                    </div>
-
-                    <div class="team-footer">
-                        <span class="team-location">📍 Казань</span>
-                        <button class="btn-join" disabled>Заявка отправлена</button>
-                    </div>
-                </div>
+            <div class="search-box">
+                <input type="text" id="teamSearch" placeholder="Поиск по роли или навыкам...">
             </div>
+        </div>
+
+        <!-- Сетка профилей -->
+        <div class="team-grid" id="teamGrid">
+            {% if profiles %}
+                {% for p in profiles %}
+                <div class="team-card" 
+                     data-looking="{{ p.looking_for }}" 
+                     data-role="{{ p.role | lower }}" 
+                     data-skills="{{ p.skills | lower }}">
+                    <div class="card-header-team">
+                        <span class="badge {{ 'seeking-team' if p.looking_for == 'team' else 'seeking-members' }}">
+                            {{ '👥 Ищу команду' if p.looking_for == 'team' else '🚀 Ищу участников' }}
+                        </span>
+                        <span class="date">{{ p.date }}</span>
+                    </div>
+                    <h3>{{ p.role }}</h3>
+                    <p class="desc">{{ p.description[:150] }}{% if p.description|length > 150 %}...{% endif %}</p>
+                    
+                    <div class="card-tags">
+                        {% if p.skills %}
+                            {% for skill in p.skills.split(',') %}
+                                {% if skill.strip() %}
+                                <span>{{ skill.strip() }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="action-btn outline" onclick="alert('Функция сообщений скоро появится!')">Написать</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🤝</div>
+                    <h3>Пока нет активных участников</h3>
+                    <p>Станьте первым, кто создаст профиль!</p>
+                </div>
+            {% endif %}
         </div>
     </main>
 
+    <!-- Модальное окно СОЗДАНИЯ/РЕДАКТИРОВАНИЯ профиля -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Создать профиль</h2>
+                <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <form method="POST" action="/create_team_profile" class="idea-form">
+                <div class="form-group">
+                    <label>Ваша роль *</label>
+                    <input type="text" name="role" value="{{ my_profile.role if my_profile else '' }}" placeholder="Например: Frontend Developer" required>
+                </div>
+                <div class="form-group">
+                    <label>Что вы ищете?</label>
+                    <select name="looking_for">
+                        <option value="team" {{ 'selected' if my_profile and my_profile.looking_for == 'team' }}>👥 Команду для своего проекта</option>
+                        <option value="members" {{ 'selected' if my_profile and my_profile.looking_for == 'members' }}>🚀 Участников в свой проект</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Навыки (через запятую)</label>
+                    <input type="text" name="skills" value="{{ my_profile.skills if my_profile else '' }}" placeholder="Python, React, Design">
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea name="description" rows="4" placeholder="Расскажите о себе или своем проекте...">{{ my_profile.description if my_profile else '' }}</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeProfileModal()">Отмена</button>
+                    <button type="submit" class="btn-create-idea">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        // Логика модального окна профиля
+        function openCreateProfileModal() {
+            document.getElementById('modalTitle').textContent = 'Создать профиль';
+            document.getElementById('profileModal').classList.add('active');
+        }
+        function openEditProfileModal() {
+            document.getElementById('modalTitle').textContent = 'Редактировать профиль';
+            document.getElementById('profileModal').classList.add('active');
+        }
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        // Фильтрация и поиск (аналогично идеям)
+        document.addEventListener("DOMContentLoaded", () => {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const searchInput = document.getElementById('teamSearch');
+            const cards = document.querySelectorAll('.team-card');
+
+            if (filterBtns.length > 0) {
+                filterBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        filterBtns.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        const filter = btn.dataset.filter;
+                        cards.forEach(card => {
+                            if (filter === 'all' || card.dataset.looking === filter) {
+                                card.classList.remove('hidden');
+                            } else {
+                                card.classList.add('hidden');
+                            }
+                        });
+                    });
+                });
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    cards.forEach(card => {
+                        const role = card.dataset.role;
+                        const skills = card.dataset.skills;
+                        if (role.includes(term) || skills.includes(term)) {
+                            card.classList.remove('hidden');
+                        } else {
+                            card.classList.add('hidden');
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
