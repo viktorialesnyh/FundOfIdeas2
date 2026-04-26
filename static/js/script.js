@@ -43,7 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
-// === ЛОГИКА СТРАНИЦЫ ИДЕЙ ===
+
+// === ЛОГИКА СТРАНИЦЫ ИДЕЙ (Фильтры и Поиск) ===
 document.addEventListener("DOMContentLoaded", () => {
     const filterBtns = document.querySelectorAll('.filter-btn');
     const searchInput = document.getElementById('searchInput');
@@ -83,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
 // === ЛОГИКА ДНЕВНИКА ===
 const toggleFormBtn = document.getElementById('toggleFormBtn');
 const entryFormContainer = document.getElementById('entryFormContainer');
@@ -95,6 +97,7 @@ if (toggleFormBtn && entryFormContainer) {
         }
     });
 }
+
 // === ЛОГИКА СТРАНИЦЫ КОМАНДА ===
 document.addEventListener("DOMContentLoaded", () => {
     const teamSearch = document.getElementById('teamSearch');
@@ -138,6 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
 // === МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ИДЕИ ===
 function openModal() {
     const modal = document.getElementById('createIdeaModal');
@@ -155,7 +159,7 @@ function closeModal() {
     }
 }
 
-// Закрытие по клику вне модального окна
+// Закрытие по клику вне модального окна (только для createIdeaModal)
 document.addEventListener('click', (e) => {
     const modal = document.getElementById('createIdeaModal');
     if (modal && e.target === modal) {
@@ -163,14 +167,84 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Закрытие по Escape
+// Закрытие по Escape (только для createIdeaModal)
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeModal();
     }
 });
+
 // === ЛОГИКА НАВЫКОВ ===
 function toggleSkillsForm() {
     const form = document.getElementById('addSkillForm');
     if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
 }
+
+// ========================================================================
+// === НОВАЯ ЛОГИКА: ПРОСМОТР И РЕДАКТИРОВАНИЕ ИДЕЙ ======================
+// ========================================================================
+
+// === ПРОСМОТР ИДЕИ ===
+function openViewModal(card) {
+    if (!card) return;
+    document.getElementById('viewTitle').textContent = card.dataset.title || '';
+    document.getElementById('viewDate').textContent = '📅 ' + (card.dataset.date || '');
+    document.getElementById('viewDesc').textContent = card.dataset.desc || '';
+    document.getElementById('viewCategory').textContent = (card.dataset.category || '').toUpperCase();
+    
+    var visBadge = document.getElementById('viewVisibility');
+    visBadge.textContent = card.dataset.visibility || '';
+    visBadge.className = 'badge ' + (card.dataset.visibility || '');
+    
+    var licenseText = (card.dataset.license || '').split('_').join(' ').toUpperCase();
+    document.getElementById('viewLicense').textContent = '📜 Лицензия: ' + licenseText;
+    
+    var tagsContainer = document.getElementById('viewTags');
+    tagsContainer.innerHTML = '';
+    if (card.dataset.tags) {
+        var tags = card.dataset.tags.split(',');
+        for (var i = 0; i < tags.length; i++) {
+            var t = tags[i].trim();
+            if (t) {
+                var span = document.createElement('span');
+                span.textContent = t;
+                tagsContainer.appendChild(span);
+            }
+        }
+    }
+    document.getElementById('viewIdeaModal').classList.add('active');
+}
+
+// === РЕДАКТИРОВАНИЕ ИДЕИ ===
+function openEditModal(card) {
+    if (!card) return;
+    var id = card.dataset.id;
+    document.getElementById('editForm').action = '/update_idea/' + id;
+    document.getElementById('editTitle').value = card.dataset.title || '';
+    document.getElementById('editDesc').value = card.dataset.desc || '';
+    document.getElementById('editCategory').value = card.dataset.category || 'other';
+    document.getElementById('editVisibility').value = card.dataset.visibility || 'draft';
+    document.getElementById('editLicense').value = card.dataset.license || 'all_rights';
+    document.getElementById('editTags').value = card.dataset.tags || '';
+    document.getElementById('editIdeaModal').classList.add('active');
+}
+
+// === УНИВЕРСАЛЬНОЕ ЗАКРЫТИЕ МОДАЛОК (Просмотр и Редактирование) ===
+function closeAnyModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = ''; // Возвращаем прокрутку
+    }
+}
+
+// Закрытие по клику на затемнённый фон для новых модалок
+window.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal')) {
+        // Проверяем, не является ли это модальным окном создания (у него своя логика)
+        if (event.target.id !== 'createIdeaModal') {
+            event.target.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+});
