@@ -172,5 +172,25 @@ def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
 
+@app.route('/update_idea/<int:idea_id>', methods=['POST'])
+def update_idea(idea_id):
+    user = get_current_user()
+    if not user: return redirect(url_for('index'))
+    
+    idea = Idea.query.get_or_404(idea_id)
+    # Защита: редактировать может только автор
+    if idea.user_id != user.id:
+        return redirect(url_for('ideas'))
+        
+    idea.title = request.form.get('title')
+    idea.description = request.form.get('description')
+    idea.category = request.form.get('category', 'other')
+    idea.visibility = request.form.get('visibility', 'draft')
+    idea.license = request.form.get('license', 'all_rights')
+    idea.tags = request.form.get('tags', '')
+    
+    db.session.commit()
+    return redirect(url_for('ideas'))
+
 if __name__ == '__main__':
     app.run(debug=True)
