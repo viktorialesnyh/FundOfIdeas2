@@ -38,3 +38,15 @@ class Skill(db.Model):
     icon = db.Column(db.String(10), default='🛠')
     level = db.Column(db.Integer, default=50)
     level_text = db.Column(db.String(20))
+class TeamProfile(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role = db.Column(db.String(50), nullable=False) # Например: Frontend Developer
+    skills = db.Column(db.String(200)) # Теги через запятую
+    description = db.Column(db.Text) # О себе или о проекте
+    looking_for = db.Column(db.String(20), default='team') # 'team' (ищу команду) или 'members' (ищу людей)
+    status = db.Column(db.String(20), default='active')
+    date = db.Column(db.String(50))
+    
+    # Связь с пользователем
+    owner = db.relationship('User', backref='team_profiles', lazy=True)

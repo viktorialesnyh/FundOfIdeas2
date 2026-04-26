@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import datetime
-from data import db, setup_database, User, Idea, DiaryEntry, Skill
+from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile
+
+
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_123'
@@ -161,12 +163,6 @@ def diary():
     entries = DiaryEntry.query.filter_by(user_id=user.id).order_by(DiaryEntry.id.desc()).all()
     return render_template('diary.html', username=user.username, entries=entries)
 
-@app.route('/team')
-def team():
-    user = get_current_user()
-    if not user: return redirect(url_for('index'))
-    return render_template('team.html', username=user.username)
-
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
@@ -191,6 +187,59 @@ def update_idea(idea_id):
     
     db.session.commit()
     return redirect(url_for('ideas'))
+
+@app.route('/team')
+def team():
+    user = get_current_user()
+    if not user: return redirect(url_for('index'))
+    
+    # Получаем все профили, кроме своего (чтобы не видеть себя в поиске)
+    profiles = TeamProfile.query.filter(TeamProfile.user_id != user.id).all()
+    
+    # Проверяем, есть ли у текущего пользователя свой профиль
+    my_profile = TeamProfile.query.filter_by(user_id=user.id).first()
+    
+    return render_template('team.html', 
+                           username=user.username, 
+                           profiles=profiles, 
+                           my_profile=my_profile)
+
+@app.route('/create_team_profile', methods=['POST'])
+def create_team_profile():
+    user = get_current_user()
+    if not user: return redirect(url_for('index'))
+    
+    # Если профиль уже есть, обновляем его
+    profile = TeamProfile.query.filter_by(user_id=user.id).first()
+    
+    data = {
+        'role': request.form.get('role'),
+        'skills': request.form.get('skills', ''),
+        'description': request.form.get('description'),
+        'looking_for': request.form.get('looking_for', 'team'),
+        'date': datetime.datetime.now().strftime('%d %b %Y')
+    }
+    
+    if profile:
+        for key, value in data.items():
+            setattr(profile, key, value)
+    else:
+        new_profile = TeamProfile(user_id=user.id, **data)
+        db.session.add(new_profile)
+        
+    db.session.commit()
+    return redirect(url_for('team'))
+
+@app.route('/delete_team_profile')
+def delete_team_profile():
+    user = get_current_user()
+    if not user: return redirect(url_for('index'))
+    
+    profile = TeamProfile.query.filter_by(user_id=user.id).first()
+    if profile:
+        db.session.delete(profile)
+        db.session.commit()
+    return redirect(url_for('team'))
 
 if __name__ == '__main__':
     app.run(debug=True)
