@@ -6,9 +6,29 @@
     <title>Профиль - Фонд Идей</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <style>
+        .alert-message {
+            animation: slideDown 0.3s ease;
+            transition: opacity 0.5s ease, max-height 0.5s ease;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 100px;
+            }
+        }
+        .alert-message.hiding {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+        }
+    </style>
 </head>
-<body class="dash-body">
-    <!-- Верхняя панель как на главной -->
+<body>
     <nav class="navbar">
         <div class="nav-brand">💡 Фонд Идей</div>
         <div class="nav-links">
@@ -19,133 +39,252 @@
             <a href="{{ url_for('profile') }}" class="active">Профиль</a>
         </div>
         <div class="nav-user">
-            <span>{{ username }}</span>
+            <span>{{ user.username }}</span>
             <a href="{{ url_for('logout') }}" class="btn-logout">Выйти</a>
         </div>
     </nav>
 
+    {% if request.args.get('success') %}
+    <div id="successMessage" class="alert-message" style="background:#d1fae5; color:#065f46; padding:10px; text-align:center; border-bottom:1px solid #a7f3d0;">
+        ✅ {{ request.args.get('success') }}
+    </div>
+    {% endif %}
+    {% if request.args.get('error') %}
+    <div id="errorMessage" class="alert-message" style="background:#fee2e2; color:#991b1b; padding:10px; text-align:center; border-bottom:1px solid #fecaca;">
+        ❌ {{ request.args.get('error') }}
+    </div>
+    {% endif %}
+
     <main class="profile-main">
-        <!-- Вкладки навигации профиля -->
         <div class="profile-tabs">
-            <button id="tab-profile" class="p-tab active">👤 Мой профиль</button>
-            <button id="tab-settings" class="p-tab">⚙️ Настройки</button>
+            <button class="p-tab active" id="tab-profile">👤 Мой профиль</button>
+            <button class="p-tab" id="tab-settings">⚙️ Настройки</button>
         </div>
 
-        <!-- Контент профиля -->
+        <!-- ВКЛАДКА ПРОФИЛЯ -->
         <div id="content-profile">
-            <!-- Фиолетовая шапка -->
             <div class="profile-header">
                 <div class="profile-avatar">
-                    <span class="avatar-initials">{{ username[:2].upper() }}</span>
-                    <button class="edit-photo-btn" onclick="alert('Загрузка фото пока не настроена')">Изменить фото</button>
+                    {% if user.is_photo_visible %}
+                        <span class="avatar-initials">{{ user.username[:2].upper() }}</span>
+                    {% else %}
+                        <span class="avatar-initials" style="opacity: 0.3; font-size: 1.5rem;"></span>
+                    {% endif %}
                 </div>
                 <div class="profile-info">
-            <h1>{{ username }}</h1>
-            <form action="/update_bio" method="POST" class="bio-form">
-                <input type="text" name="bio_text" value="{{ bio_text }}" class="bio-active-input" placeholder="Напишите краткое описание...">
-                <button type="submit" class="save-bio-btn" title="Сохранить">💾</button>
-            </form>
-                                <div class="profile-meta">
-                <span class="meta-item">
-                    <span>📍</span>
-                    <form action="/update_city" method="POST" class="meta-form">
-                        <input type="text" name="city" value="{{ city }}" class="meta-input" placeholder="Город">
-                        <button type="submit" class="meta-save-btn" title="Сохранить">💾</button>
-                    </form>
-                </span>
-                <span class="meta-item">
-                    <span>📧</span>
-                    <form action="/update_email" method="POST" class="meta-form">
-                        <input type="email" name="email" value="{{ email }}" class="meta-input" placeholder="email@example.com">
-                        <button type="submit" class="meta-save-btn" title="Сохранить">💾</button>
-                    </form>
-                </span>
-                <span class="meta-item">
-                    <span>📅</span>
-                    <form action="/update_joined" method="POST" class="meta-form">
-                        <input type="text" name="joined_year" value="{{ joined_year }}" class="meta-input" placeholder="Год регистрации">
-                        <button type="submit" class="meta-save-btn" title="Сохранить">💾</button>
-                    </form>
-                </span>
-            </div>
+                    <h1>{{ user.username }}</h1>
+                    <p class="bio-text" style="color:#6b7280; margin-bottom:10px;">{{ user.bio }}</p>
+                    <div class="profile-meta">
+                        {% if user.is_city_visible %}
+                            <span>📍 {{ user.city }}</span>
+                        {% else %}
+                            <span>📍 Скрыто</span>
+                        {% endif %}
+
+                        <span>📅 Участник с {{ user.joined_year }}</span>
+
+                        {% if user.is_email_visible %}
+                            <span>📧 {{ user.email }}</span>
+                        {% else %}
+                            <span>📧 Скрыто</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            <!-- Блок "Расскажи о себе" -->
-                        <div class="section-card">
-                <div class="section-header"><h2>📝 Расскажи о себе</h2></div>
-                <form action="/update_profile" method="POST">
-                    <textarea name="about_text" class="about-textarea" placeholder="Напишите здесь немного о себе...">{{ about_text }}</textarea>
-                    <div style="margin-top: 10px; text-align: right;">
-                        <button type="submit" class="edit-btn">💾 Сохранить</button>
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>📝 О себе</h2>
+                </div>
+
+                {% if user.is_description_visible %}
+                    <form action="/update_profile" method="POST">
+                        <input type="hidden" name="bio_text" value="{{ user.bio }}">
+                        <input type="hidden" name="city" value="{{ user.city }}">
+                        <textarea name="about_text" class="about-textarea">{{ user.about_me }}</textarea>
+                        <button type="submit" class="edit-btn" style="margin-top: 15px;">💾 Сохранить описание</button>
+                    </form>
+                {% else %}
+                    <div style="text-align: center; padding: 40px; color: #6b7280; background: #f9fafb; border-radius: 12px; border: 2px dashed #e5e7eb;">
+                        <p style="font-size: 1.1rem; margin-bottom: 10px;">Информация скрыта</p>
+                        <p style="font-size: 0.9rem; margin-bottom: 15px;">Вы скрыли раздел "О себе" в настройках конфиденциальности.</p>
+                        <a href="#" onclick="document.getElementById('tab-settings').click(); return false;" style="color:#374151; font-weight: 500; text-decoration: underline;">Изменить настройки</a>
                     </div>
+                {% endif %}
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>🛠 Навыки</h2>
+                    {% if user.is_skills_visible %}
+                        <button class="edit-btn" onclick="toggleSkillsForm()" style="background:#fff; color:#374151; border:1px solid #374151;">➕ Добавить</button>
+                    {% endif %}
+                </div>
+
+                {% if user.is_skills_visible %}
+                    <div class="skills-grid">
+                        {% for skill in user.skills %}
+                        <div class="skill-card">
+                            <div class="skill-top">
+                                <span class="skill-icon">{{ skill.icon }}</span>
+                                <h3>{{ skill.name }}</h3>
+                                <a href="/delete_skill/{{ skill.id }}" class="skill-delete-btn">×</a>
+                            </div>
+                            <div class="progress-bar"><div class="fill" style="width: {{ skill.level }}%;"></div></div>
+                            <div class="skill-level">{{ skill.level_text }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div id="addSkillForm" class="add-skill-form" style="display: none;">
+                        <form action="/add_skill" method="POST">
+                            <div class="form-row-skills">
+                                <input type="text" name="skill_name" placeholder="Название" required>
+                                <input type="text" name="skill_icon" placeholder="🛠" value="🛠">
+                                <select name="skill_level">
+                                    <option value="25">Начальный</option>
+                                    <option value="50" selected>Средний</option>
+                                    <option value="75">Продвинутый</option>
+                                    <option value="100">Эксперт</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn-cancel" onclick="toggleSkillsForm()">Отмена</button>
+                                <button type="submit" class="btn-create">Добавить</button>
+                            </div>
+                        </form>
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 40px; color: #6b7280; background: #f9fafb; border-radius: 12px; border: 2px dashed #e5e7eb;">
+                        <p style="font-size: 1.1rem; margin-bottom: 10px;">Навыки скрыты</p>
+                        <a href="#" onclick="document.getElementById('tab-settings').click(); return false;" style="color:#374151; font-weight: 500; text-decoration: underline;">Изменить настройки</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ВКЛАДКА НАСТРОЕК -->
+        <div id="content-settings" style="display: none;">
+
+            <!-- БЕЗОПАСНОСТЬ -->
+            <div class="section-card">
+                <div class="section-header"><h2>Безопасность</h2></div>
+                <form id="passwordForm" action="/settings/change_password" method="POST">
+                    <div class="form-group">
+                        <label>Текущий пароль</label>
+                        <input type="password" name="current_password" required placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Новый пароль</label>
+                        <input type="password" name="new_password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="edit-btn">Изменить пароль</button>
                 </form>
             </div>
 
-                <!-- Блок "Мои навыки" -->
+            <!-- КОНФИДЕНЦИАЛЬНОСТЬ -->
             <div class="section-card">
-                <div class="section-header">
-                    <h2>🛠 Мои навыки</h2>
-                    <button class="edit-btn" onclick="toggleSkillsForm()">✏️ Добавить</button>
-                </div>
-                
-                <div class="skills-grid" id="skillsGrid">
-                    {% for skill in skills %}
-                    <div class="skill-card">
-                        <div class="skill-top">
-                            <span class="skill-icon">{{ skill.icon }}</span>
-                            <h3>{{ skill.name }}</h3>
-                            <a href="/delete_skill/{{ loop.index0 }}" class="skill-delete-btn" onclick="return confirm('Удалить этот навык?')" title="Удалить">×</a>
+                <div class="section-header"><h2>Конфиденциальность</h2></div>
+                <p style="margin-bottom:20px; color:#6b7280;">Управляйте видимостью ваших данных для других пользователей.</p>
+
+                <form id="privacyForm" action="/settings/privacy" method="POST">
+                    <div class="privacy-grid">
+                        <div class="privacy-item">
+                            <span>Контактный Email</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_email_visible" {% if user.is_email_visible %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
                         </div>
-                        <div class="progress-bar">
-                            <div class="fill" style="width: {{ skill.level }}%"></div>
+                        <div class="privacy-item">
+                            <span>Город проживания</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_city_visible" {% if user.is_city_visible %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
                         </div>
-                        <p class="skill-level">{{ skill.level_text }}</p>
+                        <div class="privacy-item">
+                            <span>Фото профиля</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_photo_visible" {% if user.is_photo_visible %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="privacy-item">
+                            <span>Навыки</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_skills_visible" {% if user.is_skills_visible %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="privacy-item">
+                            <span>Описание (О себе)</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_description_visible" {% if user.is_description_visible %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="privacy-item">
+                            <span>Мои идеи</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_ideas_visible" {% if user.is_ideas_visible %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="privacy-item">
+                            <span>Профиль команды</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_team_visible" {% if user.is_team_visible %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
-                    {% endfor %}
-                </div>
-
-                <!-- Скрытая форма добавления -->
-                <div id="addSkillForm" class="add-skill-form" style="display: none;">
-                    <h3 style="margin-bottom: 15px; font-size: 1.1rem;">➕ Новый навык</h3>
-                    <form action="/add_skill" method="POST">
-                        <div class="form-row-skills">
-                            <div class="form-group">
-                                <label>Название</label>
-                                <input type="text" name="skill_name" placeholder="Например: Figma" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Иконка (эмодзи)</label>
-                                <input type="text" name="skill_icon" placeholder="🎨" value="🛠" maxlength="2">
-                            </div>
-                            <div class="form-group">
-                                <label>Уровень</label>
-                                <select name="skill_level">
-                                    <option value="25">25% (Начальный)</option>
-                                    <option value="50">50% (Средний)</option>
-                                    <option value="75">75% (Продвинутый)</option>
-                                    <option value="100">100% (Эксперт)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn-cancel" onclick="toggleSkillsForm()">Отмена</button>
-                            <button type="submit" class="btn-create">Сохранить</button>
-                        </div>
-                    </form>
-                </div>
+                    <button type="submit" class="edit-btn" style="margin-top:20px;">Сохранить приватность</button>
+                </form>
             </div>
-            
 
-        <!-- Заглушка для настроек -->
-        <div id="content-settings" style="display: none;">
-            <div class="section-card">
-                <h2>⚙️ Настройки аккаунта</h2>
-                <p style="color: #6b7280; margin-top: 10px;">Здесь будут настройки пароля и уведомлений.</p>
+            <!-- УДАЛЕНИЕ АККАУНТА -->
+            <div class="section-card" style="border: 2px solid #fee2e2;">
+                <div class="section-header">
+                    <h2 style="color:#ef4444;">Удаление аккаунта</h2>
+                </div>
+                <p style="margin-bottom:20px; color:#6b7280;">Это действие необратимо. Все ваши идеи, записи в дневнике и навыки будут удалены навсегда.</p>
+                <form id="deleteForm" action="/settings/delete_account" method="POST">
+                    <div class="form-group">
+                        <label>Введите пароль для подтверждения удаления</label>
+                        <input type="password" name="confirm_password" required style="border-color:#ef4444; background:#fff5f5;">
+                    </div>
+                    <button type="submit" class="btn-delete-account">Удалить мой аккаунт</button>
+                </form>
             </div>
+
         </div>
-
     </main>
+
+    <script>
+        // Автоматическое скрытие сообщений об успехе/ошибке через 3 секунды
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+
+            function hideMessage(msg) {
+                if (msg) {
+                    msg.classList.add('hiding');
+                    setTimeout(() => {
+                        msg.remove();
+                    }, 500);
+                }
+            }
+
+            // Скрываем сообщения через 3 секунды
+            if (successMsg) {
+                setTimeout(() => hideMessage(successMsg), 3000);
+            }
+            if (errorMsg) {
+                setTimeout(() => hideMessage(errorMsg), 3000);
+            }
+        });
+    </script>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>

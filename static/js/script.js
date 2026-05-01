@@ -4,7 +4,6 @@ function switchTab(tab) {
     const registerTab = document.getElementById('registerTab');
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
-
     if (tab === 'login') {
         loginTab.classList.add('active');
         registerTab.classList.remove('active');
@@ -18,10 +17,8 @@ function switchTab(tab) {
     }
 }
 
-// === ЛОГИКА ПРОФИЛЯ ===
+// === ЛОГИКА ПРОФИЛЯ (Переключение вкладок) ===
 document.addEventListener("DOMContentLoaded", () => {
-    
-    // Переключение вкладок "Мой профиль" / "Настройки"
     const tabProfile = document.getElementById('tab-profile');
     const tabSettings = document.getElementById('tab-settings');
     const contentProfile = document.getElementById('content-profile');
@@ -44,19 +41,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// === ЛОГИКА СТРАНИЦЫ ИДЕЙ (Фильтры и Поиск) ===
+// === ЛОГИКА НАВЫКОВ ===
+function toggleSkillsForm() {
+    const form = document.getElementById('addSkillForm');
+    if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+// === ЛОГИКА ИДЕЙ (Фильтры и Поиск) ===
 document.addEventListener("DOMContentLoaded", () => {
     const filterBtns = document.querySelectorAll('.filter-btn');
     const searchInput = document.getElementById('searchInput');
     const cards = document.querySelectorAll('.idea-card');
 
-    // Фильтрация по статусу
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
                 const filter = btn.dataset.filter;
                 cards.forEach(card => {
                     if (filter === 'all' || card.dataset.status === filter) {
@@ -69,182 +70,69 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Поиск по названию
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             cards.forEach(card => {
                 const title = card.querySelector('h3').textContent.toLowerCase();
-                if (title.includes(term)) {
-                    card.classList.remove('hidden');
-                } else {
-                    card.classList.add('hidden');
-                }
+                if (title.includes(term)) card.classList.remove('hidden');
+                else card.classList.add('hidden');
             });
         });
     }
 });
 
-// === ЛОГИКА ДНЕВНИКА ===
+// === ДНЕВНИК ===
 const toggleFormBtn = document.getElementById('toggleFormBtn');
 const entryFormContainer = document.getElementById('entryFormContainer');
-
 if (toggleFormBtn && entryFormContainer) {
     toggleFormBtn.addEventListener('click', () => {
         entryFormContainer.classList.toggle('hidden');
-        if (!entryFormContainer.classList.contains('hidden')) {
-            entryFormContainer.querySelector('textarea').focus();
-        }
     });
 }
 
-// === ЛОГИКА СТРАНИЦЫ КОМАНДА ===
+// === КОМАНДА ===
 document.addEventListener("DOMContentLoaded", () => {
     const teamSearch = document.getElementById('teamSearch');
-    const filterBtns = document.querySelectorAll('.filter-btn');
     const teamCards = document.querySelectorAll('.team-card');
+    const filterBtns = document.querySelectorAll('.filter-btn');
 
-    // Поиск команд
     if (teamSearch) {
         teamSearch.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             teamCards.forEach(card => {
-                const title = card.querySelector('h3').textContent.toLowerCase();
-                const project = card.querySelector('.team-project').textContent.toLowerCase();
-                const skills = card.querySelector('.team-skills').textContent.toLowerCase();
-                
-                if (title.includes(term) || project.includes(term) || skills.includes(term)) {
-                    card.classList.remove('hidden');
-                } else {
-                    card.classList.add('hidden');
-                }
+                const text = card.textContent.toLowerCase();
+                if (text.includes(term)) card.classList.remove('hidden');
+                else card.classList.add('hidden');
             });
         });
     }
 
-    // Фильтрация по категориям
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
                 const filter = btn.dataset.filter;
                 teamCards.forEach(card => {
-                    if (filter === 'all' || card.dataset.category.includes(filter)) {
-                        card.classList.remove('hidden');
-                    } else {
-                        card.classList.add('hidden');
-                    }
+                    if (filter === 'all' || card.dataset.category.includes(filter)) card.classList.remove('hidden');
+                    else card.classList.add('hidden');
                 });
             });
         });
     }
 });
 
-// === МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ИДЕИ ===
-function openModal() {
-    const modal = document.getElementById('createIdeaModal');
-    if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Запретить прокрутку фона
-    }
-}
-
+// === МОДАЛЬНЫЕ ОКНА ИДЕЙ ===
+function openModal() { document.getElementById('createIdeaModal').classList.add('active'); }
 function closeModal() {
-    const modal = document.getElementById('createIdeaModal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = ''; // Вернуть прокрутку
-    }
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(m => m.classList.remove('active'));
 }
-
-// Закрытие по клику вне модального окна (только для createIdeaModal)
 document.addEventListener('click', (e) => {
-    const modal = document.getElementById('createIdeaModal');
-    if (modal && e.target === modal) {
-        closeModal();
-    }
+    if (e.target.classList.contains('modal')) closeModal();
 });
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeModal(); });
 
-// Закрытие по Escape (только для createIdeaModal)
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeModal();
-    }
-});
-
-// === ЛОГИКА НАВЫКОВ ===
-function toggleSkillsForm() {
-    const form = document.getElementById('addSkillForm');
-    if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
-
-// ========================================================================
-// === НОВАЯ ЛОГИКА: ПРОСМОТР И РЕДАКТИРОВАНИЕ ИДЕЙ ======================
-// ========================================================================
-
-// === ПРОСМОТР ИДЕИ ===
-function openViewModal(card) {
-    if (!card) return;
-    document.getElementById('viewTitle').textContent = card.dataset.title || '';
-    document.getElementById('viewDate').textContent = '📅 ' + (card.dataset.date || '');
-    document.getElementById('viewDesc').textContent = card.dataset.desc || '';
-    document.getElementById('viewCategory').textContent = (card.dataset.category || '').toUpperCase();
-    
-    var visBadge = document.getElementById('viewVisibility');
-    visBadge.textContent = card.dataset.visibility || '';
-    visBadge.className = 'badge ' + (card.dataset.visibility || '');
-    
-    var licenseText = (card.dataset.license || '').split('_').join(' ').toUpperCase();
-    document.getElementById('viewLicense').textContent = '📜 Лицензия: ' + licenseText;
-    
-    var tagsContainer = document.getElementById('viewTags');
-    tagsContainer.innerHTML = '';
-    if (card.dataset.tags) {
-        var tags = card.dataset.tags.split(',');
-        for (var i = 0; i < tags.length; i++) {
-            var t = tags[i].trim();
-            if (t) {
-                var span = document.createElement('span');
-                span.textContent = t;
-                tagsContainer.appendChild(span);
-            }
-        }
-    }
-    document.getElementById('viewIdeaModal').classList.add('active');
-}
-
-// === РЕДАКТИРОВАНИЕ ИДЕИ ===
-function openEditModal(card) {
-    if (!card) return;
-    var id = card.dataset.id;
-    document.getElementById('editForm').action = '/update_idea/' + id;
-    document.getElementById('editTitle').value = card.dataset.title || '';
-    document.getElementById('editDesc').value = card.dataset.desc || '';
-    document.getElementById('editCategory').value = card.dataset.category || 'other';
-    document.getElementById('editVisibility').value = card.dataset.visibility || 'draft';
-    document.getElementById('editLicense').value = card.dataset.license || 'all_rights';
-    document.getElementById('editTags').value = card.dataset.tags || '';
-    document.getElementById('editIdeaModal').classList.add('active');
-}
-
-// === УНИВЕРСАЛЬНОЕ ЗАКРЫТИЕ МОДАЛОК (Просмотр и Редактирование) ===
-function closeAnyModal(modalId) {
-    var modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = ''; // Возвращаем прокрутку
-    }
-}
-
-// Закрытие по клику на затемнённый фон для новых модалок
-window.addEventListener('click', function(event) {
-    if (event.target.classList.contains('modal')) {
-        // Проверяем, не является ли это модальным окном создания (у него своя логика)
-        if (event.target.id !== 'createIdeaModal') {
-            event.target.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    }
-});
+function openViewModal(card) { /* Логика просмотра */ }
+function openEditModal(card) { /* Логика редактирования */ }
