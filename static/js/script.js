@@ -4,7 +4,6 @@ function switchTab(tab) {
     const registerTab = document.getElementById('registerTab');
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
-
     if (tab === 'login') {
         loginTab.classList.add('active');
         registerTab.classList.remove('active');
@@ -20,8 +19,6 @@ function switchTab(tab) {
 
 // === ЛОГИКА ПРОФИЛЯ ===
 document.addEventListener("DOMContentLoaded", () => {
-    
-    // Переключение вкладок "Мой профиль" / "Настройки"
     const tabProfile = document.getElementById('tab-profile');
     const tabSettings = document.getElementById('tab-settings');
     const contentProfile = document.getElementById('content-profile');
@@ -50,13 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById('searchInput');
     const cards = document.querySelectorAll('.idea-card');
 
-    // Фильтрация по статусу
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
                 const filter = btn.dataset.filter;
                 cards.forEach(card => {
                     if (filter === 'all' || card.dataset.status === filter) {
@@ -69,7 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Поиск по названию
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
@@ -88,7 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
 // === ЛОГИКА ДНЕВНИКА ===
 const toggleFormBtn = document.getElementById('toggleFormBtn');
 const entryFormContainer = document.getElementById('entryFormContainer');
-
 if (toggleFormBtn && entryFormContainer) {
     toggleFormBtn.addEventListener('click', () => {
         entryFormContainer.classList.toggle('hidden');
@@ -104,7 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const filterBtns = document.querySelectorAll('.filter-btn');
     const teamCards = document.querySelectorAll('.team-card');
 
-    // Поиск команд
     if (teamSearch) {
         teamSearch.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
@@ -112,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const title = card.querySelector('h3').textContent.toLowerCase();
                 const project = card.querySelector('.team-project').textContent.toLowerCase();
                 const skills = card.querySelector('.team-skills').textContent.toLowerCase();
-                
+
                 if (title.includes(term) || project.includes(term) || skills.includes(term)) {
                     card.classList.remove('hidden');
                 } else {
@@ -122,13 +114,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Фильтрация по категориям
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                
                 const filter = btn.dataset.filter;
                 teamCards.forEach(card => {
                     if (filter === 'all' || card.dataset.category.includes(filter)) {
@@ -147,27 +137,22 @@ function openModal() {
     const modal = document.getElementById('createIdeaModal');
     if (modal) {
         modal.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Запретить прокрутку фона
+        document.body.style.overflow = 'hidden';
     }
 }
-
 function closeModal() {
     const modal = document.getElementById('createIdeaModal');
     if (modal) {
         modal.classList.remove('active');
-        document.body.style.overflow = ''; // Вернуть прокрутку
+        document.body.style.overflow = '';
     }
 }
-
-// Закрытие по клику вне модального окна (только для createIdeaModal)
 document.addEventListener('click', (e) => {
     const modal = document.getElementById('createIdeaModal');
     if (modal && e.target === modal) {
         closeModal();
     }
 });
-
-// Закрытие по Escape (только для createIdeaModal)
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeModal();
@@ -180,10 +165,6 @@ function toggleSkillsForm() {
     if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
 }
 
-// ========================================================================
-// === НОВАЯ ЛОГИКА: ПРОСМОТР И РЕДАКТИРОВАНИЕ ИДЕЙ ======================
-// ========================================================================
-
 // === ПРОСМОТР ИДЕИ ===
 function openViewModal(card) {
     if (!card) return;
@@ -191,14 +172,11 @@ function openViewModal(card) {
     document.getElementById('viewDate').textContent = '📅 ' + (card.dataset.date || '');
     document.getElementById('viewDesc').textContent = card.dataset.desc || '';
     document.getElementById('viewCategory').textContent = (card.dataset.category || '').toUpperCase();
-    
     var visBadge = document.getElementById('viewVisibility');
     visBadge.textContent = card.dataset.visibility || '';
     visBadge.className = 'badge ' + (card.dataset.visibility || '');
-    
     var licenseText = (card.dataset.license || '').split('_').join(' ').toUpperCase();
-    document.getElementById('viewLicense').textContent = '📜 Лицензия: ' + licenseText;
-    
+    document.getElementById('viewLicense').textContent = ' Лицензия: ' + licenseText;
     var tagsContainer = document.getElementById('viewTags');
     tagsContainer.innerHTML = '';
     if (card.dataset.tags) {
@@ -229,22 +207,58 @@ function openEditModal(card) {
     document.getElementById('editIdeaModal').classList.add('active');
 }
 
-// === УНИВЕРСАЛЬНОЕ ЗАКРЫТИЕ МОДАЛОК (Просмотр и Редактирование) ===
+// === УНИВЕРСАЛЬНОЕ ЗАКРЫТИЕ МОДАЛОК ===
 function closeAnyModal(modalId) {
     var modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('active');
-        document.body.style.overflow = ''; // Возвращаем прокрутку
+        document.body.style.overflow = '';
     }
 }
-
-// Закрытие по клику на затемнённый фон для новых модалок
 window.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal')) {
-        // Проверяем, не является ли это модальным окном создания (у него своя логика)
         if (event.target.id !== 'createIdeaModal') {
             event.target.classList.remove('active');
             document.body.style.overflow = '';
         }
     }
 });
+
+// === ЛОГИКА НАСТРОЕК (НОВОЕ) ===
+const settingsForm = document.getElementById('settingsForm');
+if (settingsForm) {
+    settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(settingsForm);
+        const btn = settingsForm.querySelector('button[type="submit"]');
+        const originalText = btn.textContent;
+        btn.textContent = 'Сохранение';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/update_settings', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                btn.textContent = 'Сохранено';
+                btn.style.background = '#10b981';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                throw new Error('Ошибка сервера');
+            }
+        } catch (err) {
+            btn.textContent = 'Ошибка';
+            btn.style.background = '#ef4444';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+                btn.disabled = false;
+            }, 2000);
+        }
+    });
+}

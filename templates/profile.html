@@ -7,8 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
 </head>
-<body class="dash-body">
-    <!-- Верхняя панель как на главной -->
+<body>
     <nav class="navbar">
         <div class="nav-brand">💡 Фонд Идей</div>
         <div class="nav-links">
@@ -25,108 +24,87 @@
     </nav>
 
     <main class="profile-main">
-        <!-- Вкладки навигации профиля -->
         <div class="profile-tabs">
-            <button id="tab-profile" class="p-tab active">👤 Мой профиль</button>
-            <button id="tab-settings" class="p-tab">⚙️ Настройки</button>
+            <button class="p-tab active" id="tab-profile">👤 Мой профиль</button>
+            <button class="p-tab" id="tab-settings">⚙️ Настройки</button>
         </div>
 
-        <!-- Контент профиля -->
+        <!-- Вкладка Профиль -->
         <div id="content-profile">
-            <!-- Фиолетовая шапка -->
             <div class="profile-header">
                 <div class="profile-avatar">
                     <span class="avatar-initials">{{ username[:2].upper() }}</span>
-                    <button class="edit-photo-btn" onclick="alert('Загрузка фото пока не настроена')">Изменить фото</button>
+                    <button class="edit-photo-btn">Изменить фото</button>
                 </div>
                 <div class="profile-info">
-            <h1>{{ username }}</h1>
-            <form action="/update_bio" method="POST" class="bio-form">
-                <input type="text" name="bio_text" value="{{ bio_text }}" class="bio-active-input" placeholder="Напишите краткое описание...">
-                <button type="submit" class="save-bio-btn" title="Сохранить">💾</button>
-            </form>
-                                <div class="profile-meta">
-                <span class="meta-item">
-                    <span>📍</span>
-                    <form action="/update_city" method="POST" class="meta-form">
-                        <input type="text" name="city" value="{{ city }}" class="meta-input" placeholder="Город">
-                        <button type="submit" class="meta-save-btn" title="Сохранить">💾</button>
+                    <h1>{{ username }}</h1>
+                    <form action="/update_bio" method="POST" class="bio-form">
+                        <input type="text" name="bio_text" value="{{ bio_text }}" class="bio-active-input">
+                        <button type="submit" class="save-bio-btn">💾</button>
                     </form>
-                </span>
-                <span class="meta-item">
-                    <span>📧</span>
-                    <form action="/update_email" method="POST" class="meta-form">
-                        <input type="email" name="email" value="{{ email }}" class="meta-input" placeholder="email@example.com">
-                        <button type="submit" class="meta-save-btn" title="Сохранить">💾</button>
-                    </form>
-                </span>
-                <span class="meta-item">
-                    <span>📅</span>
-                    <form action="/update_joined" method="POST" class="meta-form">
-                        <input type="text" name="joined_year" value="{{ joined_year }}" class="meta-input" placeholder="Год регистрации">
-                        <button type="submit" class="meta-save-btn" title="Сохранить">💾</button>
-                    </form>
-                </span>
-            </div>
+                    <div class="profile-meta">
+                        <div class="meta-item">
+                            <form action="/update_city" method="POST" class="meta-form">
+                                <input type="text" name="city" value="{{ city }}" class="meta-input">
+                                <button type="submit" class="meta-save-btn"></button>
+                            </form>
+                        </div>
+                        <div class="meta-item">
+                            <form action="/update_email" method="POST" class="meta-form">
+                                <input type="text" name="email" value="{{ email }}" class="meta-input">
+                                <button type="submit" class="meta-save-btn">💾</button>
+                            </form>
+                        </div>
+                        <div class="meta-item">
+                            <form action="/update_joined" method="POST" class="meta-form">
+                                <input type="text" name="joined_year" value="{{ joined_year }}" class="meta-input">
+                                <button type="submit" class="meta-save-btn">💾</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Блок "Расскажи о себе" -->
-                        <div class="section-card">
-                <div class="section-header"><h2>📝 Расскажи о себе</h2></div>
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>📝 Расскажи о себе</h2>
+                </div>
                 <form action="/update_profile" method="POST">
-                    <textarea name="about_text" class="about-textarea" placeholder="Напишите здесь немного о себе...">{{ about_text }}</textarea>
-                    <div style="margin-top: 10px; text-align: right;">
-                        <button type="submit" class="edit-btn">💾 Сохранить</button>
-                    </div>
+                    <textarea name="about_text" class="about-textarea">{{ about_text }}</textarea>
+                    <button type="submit" class="edit-btn" style="margin-top: 15px;">💾 Сохранить</button>
                 </form>
             </div>
 
-                <!-- Блок "Мои навыки" -->
             <div class="section-card">
                 <div class="section-header">
                     <h2>🛠 Мои навыки</h2>
                     <button class="edit-btn" onclick="toggleSkillsForm()">✏️ Добавить</button>
                 </div>
-                
-                <div class="skills-grid" id="skillsGrid">
+                <div class="skills-grid">
                     {% for skill in skills %}
                     <div class="skill-card">
                         <div class="skill-top">
                             <span class="skill-icon">{{ skill.icon }}</span>
                             <h3>{{ skill.name }}</h3>
-                            <a href="/delete_skill/{{ loop.index0 }}" class="skill-delete-btn" onclick="return confirm('Удалить этот навык?')" title="Удалить">×</a>
+                            <a href="/delete_skill/{{ loop.index0 }}" class="skill-delete-btn">×</a>
                         </div>
-                        <div class="progress-bar">
-                            <div class="fill" style="width: {{ skill.level }}%"></div>
-                        </div>
-                        <p class="skill-level">{{ skill.level_text }}</p>
+                        <div class="progress-bar"><div class="fill" style="width: {{ skill.level }}%;"></div></div>
+                        <div class="skill-level">{{ skill.level_text }}</div>
                     </div>
                     {% endfor %}
                 </div>
 
-                <!-- Скрытая форма добавления -->
                 <div id="addSkillForm" class="add-skill-form" style="display: none;">
-                    <h3 style="margin-bottom: 15px; font-size: 1.1rem;">➕ Новый навык</h3>
                     <form action="/add_skill" method="POST">
                         <div class="form-row-skills">
-                            <div class="form-group">
-                                <label>Название</label>
-                                <input type="text" name="skill_name" placeholder="Например: Figma" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Иконка (эмодзи)</label>
-                                <input type="text" name="skill_icon" placeholder="🎨" value="🛠" maxlength="2">
-                            </div>
-                            <div class="form-group">
-                                <label>Уровень</label>
-                                <select name="skill_level">
-                                    <option value="25">25% (Начальный)</option>
-                                    <option value="50">50% (Средний)</option>
-                                    <option value="75">75% (Продвинутый)</option>
-                                    <option value="100">100% (Эксперт)</option>
-                                </select>
-                            </div>
+                            <input type="text" name="skill_name" placeholder="Название" required>
+                            <input type="text" name="skill_icon" placeholder="Иконка (эмодзи)" value="🛠">
+                            <select name="skill_level">
+                                <option value="25">25% (Начальный)</option>
+                                <option value="50">50% (Средний)</option>
+                                <option value="75">75% (Продвинутый)</option>
+                                <option value="100">100% (Эксперт)</option>
+                            </select>
                         </div>
                         <div class="form-actions">
                             <button type="button" class="btn-cancel" onclick="toggleSkillsForm()">Отмена</button>
@@ -135,16 +113,75 @@
                     </form>
                 </div>
             </div>
-            
-
-        <!-- Заглушка для настроек -->
-        <div id="content-settings" style="display: none;">
-            <div class="section-card">
-                <h2>⚙️ Настройки аккаунта</h2>
-                <p style="color: #6b7280; margin-top: 10px;">Здесь будут настройки пароля и уведомлений.</p>
-            </div>
         </div>
 
+        <!-- Вкладка Настройки -->
+        <div id="content-settings" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>⚙️ Настройки аккаунта</h2>
+                </div>
+                <form id="settingsForm">
+                    <!-- Уведомления -->
+                    <div class="settings-section">
+                        <h3>🔔 Уведомления</h3>
+                        <div class="setting-item">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="notifications_enabled" {% if user.notifications_enabled %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                            <span>Включить уведомления в приложении</span>
+                        </div>
+                        <div class="setting-item">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="email_notifications" {% if user.email_notifications %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                            <span>Получать уведомления на Email</span>
+                        </div>
+                    </div>
+
+                    <!-- Интерфейс -->
+                    <div class="settings-section">
+                        <h3>🎨 Интерфейс</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Тема оформления</label>
+                                <select name="theme_preference">
+                                    <option value="light" {% if user.theme_preference == 'light' %}selected{% endif %}>Светлая</option>
+                                    <option value="dark" {% if user.theme_preference == 'dark' %}selected{% endif %}>Темная</option>
+                                    <option value="system" {% if user.theme_preference == 'system' %}selected{% endif %}>Системная</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Язык интерфейса</label>
+                                <select name="language">
+                                    <option value="ru" {% if user.language == 'ru' %}selected{% endif %}>Русский</option>
+                                    <option value="en" {% if user.language == 'en' %}selected{% endif %}>English</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Приватность -->
+                    <div class="settings-section">
+                        <h3>🔒 Приватность</h3>
+                        <div class="form-group">
+                            <label>Кто может видеть ваш профиль</label>
+                            <select name="privacy_level">
+                                <option value="public" {% if user.privacy_level == 'public' %}selected{% endif %}>Все пользователи</option>
+                                <option value="friends" {% if user.privacy_level == 'friends' %}selected{% endif %}>Только друзья</option>
+                                <option value="private" {% if user.privacy_level == 'private' %}selected{% endif %}>Только я</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="edit-btn">💾 Сохранить настройки</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
