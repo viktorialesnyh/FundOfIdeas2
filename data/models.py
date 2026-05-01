@@ -1,25 +1,36 @@
 from .database import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256))
+
     bio = db.Column(db.Text, default="Основатель стартапа в области EdTech...")
     about_me = db.Column(db.Text, default="")
     city = db.Column(db.String(100), default="Москва, Россия")
     joined_year = db.Column(db.String(10), default="2026")
 
-    # Настройки пользователя
-    notifications_enabled = db.Column(db.Boolean, default=True)
-    email_notifications = db.Column(db.Boolean, default=True)
-    theme_preference = db.Column(db.String(20), default='light')
-    language = db.Column(db.String(5), default='ru')
-    privacy_level = db.Column(db.String(20), default='public')
+    # Настройки конфиденциальности (True = видно всем, False = скрыто)
+    is_email_visible = db.Column(db.Boolean, default=True)
+    is_city_visible = db.Column(db.Boolean, default=True)
+    is_photo_visible = db.Column(db.Boolean, default=True)
+    is_skills_visible = db.Column(db.Boolean, default=True)
+    is_description_visible = db.Column(db.Boolean, default=True)
+    is_ideas_visible = db.Column(db.Boolean, default=True)
+    is_team_visible = db.Column(db.Boolean, default=True)
 
     ideas = db.relationship('Idea', backref='author', lazy=True)
     diary_entries = db.relationship('DiaryEntry', backref='owner', lazy=True)
     skills = db.relationship('Skill', backref='owner_skill', lazy=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 class Idea(db.Model):
