@@ -136,3 +136,96 @@ document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeModal(
 
 function openViewModal(card) { /* Логика просмотра */ }
 function openEditModal(card) { /* Логика редактирования */ }
+// === МОДАЛЬНОЕ ОКНО: ПРОСМОТР ИДЕИ ===
+function openViewModal(card) {
+    // Получаем данные из data-атрибутов карточки
+    const title = card.dataset.title;
+    const desc = card.dataset.desc;
+    const category = card.dataset.category;
+    const visibility = card.dataset.visibility;
+    const license = card.dataset.license;
+    const tags = card.dataset.tags;
+    const date = card.dataset.date;
+
+    // Заполняем поля модального окна
+    document.getElementById('viewTitle').textContent = title;
+    document.getElementById('viewDate').textContent = `📅 ${date}`;
+
+    // Категория
+    const catNames = {
+        'edtech': '🎓 EdTech',
+        'health': '🏥 HealthTech',
+        'fintech': '💰 FinTech',
+        'other': '📦 Другое'
+    };
+    document.getElementById('viewCategory').textContent = catNames[category] || category;
+
+    // Видимость
+    const visNames = {
+        'draft': '📝 Черновик',
+        'private': '🔒 Приватная',
+        'published': '🌍 Опубликована'
+    };
+    const visBadge = document.getElementById('viewVisibility');
+    visBadge.textContent = visNames[visibility] || visibility;
+    visBadge.className = 'badge ' + visibility;
+
+    // Описание
+    document.getElementById('viewDesc').textContent = desc;
+
+    // Теги
+    const tagsContainer = document.getElementById('viewTags');
+    tagsContainer.innerHTML = '';
+    if (tags) {
+        tags.split(',').forEach(tag => {
+            if (tag.trim()) {
+                const span = document.createElement('span');
+                span.textContent = tag.trim();
+                tagsContainer.appendChild(span);
+            }
+        });
+    }
+
+    // Лицензия
+    const licNames = {
+        'all_rights': '© Все права защищены',
+        'cc_by': 'CC BY (с указанием автора)',
+        'cc_by_sa': 'CC BY-SA (с той же лицензией)',
+        'cc_by_nc': 'CC BY-NC (некоммерческая)',
+        'mit': 'MIT License (открытый код)',
+        'public_domain': '🌍 Public Domain'
+    };
+    document.getElementById('viewLicense').textContent = `Лицензия: ${licNames[license] || license}`;
+
+    // Показываем модальное окно
+    document.getElementById('viewIdeaModal').classList.add('active');
+}
+
+// === МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ ИДЕИ ===
+function openEditModal(card) {
+    // Получаем ID идеи для формирования action формы
+    const ideaId = card.dataset.id;
+
+    // Заполняем поля формы
+    document.getElementById('editTitle').value = card.dataset.title;
+    document.getElementById('editDesc').value = card.dataset.desc;
+    document.getElementById('editCategory').value = card.dataset.category;
+    document.getElementById('editVisibility').value = card.dataset.visibility;
+    document.getElementById('editLicense').value = card.dataset.license;
+    document.getElementById('editTags').value = card.dataset.tags;
+
+    // Устанавливаем правильный action для формы с ID идеи
+    const editForm = document.getElementById('editForm');
+    editForm.action = `/update_idea/${ideaId}`;
+
+    // Показываем модальное окно
+    document.getElementById('editIdeaModal').classList.add('active');
+}
+
+// === ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: закрытие конкретного модального окна ===
+function closeAnyModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
