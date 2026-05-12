@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import datetime
-from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile
+from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile, Like, Comment
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -91,7 +91,8 @@ def ideas():
     user = get_current_user()
     if not user:
         return redirect(url_for('index'))
-    return render_template('ideas.html', username=user.username, user=user)
+    liked_ideas = {l.idea_id for l in Like.query.filter_by(user_id=user.id).all()}
+    return render_template('ideas.html', username=user.username, user=user, liked_ideas=liked_ideas)
 
 
 @app.route('/diary', methods=['GET', 'POST'])
@@ -316,6 +317,38 @@ def delete_team_profile():
         db.session.commit()
     return redirect(url_for('team'))
 
+
+# === ЛАЙКИ И КОММЕНТАРИИ ===
+
+@app.route('/like_idea/<int:idea_id>', methods=['POST'])
+def like_idea(idea_id):
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    # Проверяем, есть ли уже лайк
+    existing = Like.query.filter_by(user_id=user.id, idea_id=idea_id).first()
+    if existing:
+        # Если есть — удаляем (дизлайк)
+        db.session.delete(existing)
+    else:
+        # Если нет — добавляем
+        db.session.add(Like(user_id=user.id, idea_id=idea_id))
+    db.session.commit()
+    return redirect(url_for('ideas'))
+
+
+@app.route('/add_comment/<int:idea_id>', methods=['POST'])
+def add_comment(idea_id):
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    text = request.form.get('comment_text')
+    if text:
+        db.session.add(Comment(user_id=user.id, idea_id=idea_id, text=text))
+        db.session.commit()
+    return redirect(url_for('ideas'))
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -88,6 +88,31 @@
                         <button class="action-btn outline" onclick="openEditModal(this.closest('.idea-card'))">✏️ Редактировать</button>
                     </div>
                 </div>
+            <!-- Форма комментария -->
+                <div class="comment-section" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee;">
+                    <form action="/add_comment/{{ idea.id }}" method="POST" style="display: flex; gap: 5px;">
+                        <input type="text" name="comment_text" placeholder="Комментарий..." required style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                        <button type="submit" style="background: #374151; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">➤</button>
+                    </form>
+                </div>
+            <!-- Список комментариев -->
+                <div style="margin-top: 10px; max-height: 100px; overflow-y: auto; font-size: 0.85rem;">
+                    {% for comment in idea.comments|sort(attribute='id', reverse=true) %}
+                    <div style="margin-bottom: 4px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px;">
+                        <b style="color: #374151;">{{ comment.user.username }}</b>: {{ comment.text }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+            <!-- Лайки (кнопка и счетчик) -->
+            <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 0.9rem;">
+                <form action="/like_idea/{{ idea.id }}" method="POST" style="display: inline;">
+                    <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0;">
+                        {{ '❤️' if idea.id in liked_ideas else '🤍' }}
+                    </button>
+                </form>
+                <span style="color: #555;">{{ idea.likes|length }}</span>
+            </div>
                 {% endfor %}
             {% else %}
                 <div class="empty-state">
