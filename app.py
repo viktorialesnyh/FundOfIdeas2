@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import datetime
 from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile, Like, Comment, Team, TeamMember
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import or_
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_123'
@@ -75,42 +76,27 @@ def dashboard():
     if not user:
         return redirect(url_for('index'))
 
-    # 1. Сбор профиля интересов пользователя
     user_ideas = Idea.query.filter_by(user_id=user.id).all()
     user_categories = {i.category for i in user_ideas if i.category}
-
     user_tags = set()
     for i in user_ideas:
         if i.tags:
             user_tags.update(t.strip().lower() for t in i.tags.split(','))
-
     user_skills = {s.name.lower() for s in Skill.query.filter_by(user_id=user.id).all()}
 
-    # 2. Получение кандидатов: ВСЕ опубликованные идеи
     candidates = Idea.query.filter(Idea.visibility == 'published').all()
-
     scored_ideas = []
     now = datetime.datetime.now()
 
     for idea in candidates:
         score = 0
-
-        # А) Совпадение категории (+30)
         if idea.category in user_categories:
             score += 30
-
-        # Б) Совпадение тегов (+10 за каждый)
         idea_tags = set(t.strip().lower() for t in idea.tags.split(',')) if idea.tags else set()
         score += len(idea_tags & user_tags) * 10
-
-        # В) Совпадение навыков (+5 за каждый)
         score += len(idea_tags & user_skills) * 5
-
-        # Г) Популярность (лайки) (+2 за лайк)
         likes_count = Like.query.filter_by(idea_id=idea.id).count()
         score += likes_count * 2
-
-        # Д) Свежесть (новым идеям бонус)
         try:
             idea_date = datetime.datetime.strptime(idea.date, '%d %b %Y')
             days_old = (now - idea_date).days
@@ -118,16 +104,53 @@ def dashboard():
                 score += (30 - days_old) * 1.5
         except ValueError:
             pass
-
         scored_ideas.append({'idea': idea, 'score': score})
 
-    # 3. Сортировка
     scored_ideas.sort(key=lambda x: (x['score'], x['idea'].id), reverse=True)
     recommended_ideas = [item['idea'] for item in scored_ideas[:15]]
     liked_ideas = {l.idea_id for l in Like.query.filter_by(user_id=user.id).all()}
 
     return render_template('dashboard.html', username=user.username, recommended_ideas=recommended_ideas,
                            liked_ideas=liked_ideas)
+
+
+@app.route('/search_ideas', methods=['GET'])
+def search_ideas():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+
+    search_term = f'%{query}%'
+
+    # Используем ilike для поиска БЕЗ УЧЕТА РЕГИСТРА (Case Insensitive)
+    results = Idea.query.join(User, Idea.user_id == User.id).filter(
+        Idea.visibility == 'published',
+        or_(
+            Idea.title.ilike(search_term),
+            Idea.description.ilike(search_term),
+            Idea.tags.ilike(search_term),
+            User.username.ilike(search_term)
+        )
+    ).order_by(Idea.id.desc()).limit(20).all()
+
+    data = []
+    for idea in results:
+        data.append({
+            'id': idea.id,
+            'title': idea.title,
+            'description': idea.description,
+            'date': idea.date,
+            'tags': idea.tags,
+            'author_username': idea.author.username if idea.author else 'Аноним',
+            'visibility': idea.visibility,
+            'category': idea.category,
+            'license': idea.license
+        })
+    return jsonify(data)
 
 
 @app.route('/profile')
@@ -334,11 +357,9 @@ def like_idea(idea_id):
         is_liked = True
 
     db.session.commit()
-
     if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         new_count = Like.query.filter_by(idea_id=idea_id).count()
         return jsonify({'likes': new_count, 'is_liked': is_liked})
-
     return redirect(url_for('ideas'))
 
 
@@ -347,16 +368,9 @@ def get_comments(idea_id):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-
-    # В модели Comment нет поля date, поэтому возвращаем только текст и автора
     comments = Comment.query.filter_by(idea_id=idea_id).order_by(Comment.id.desc()).all()
-    comments_data = []
-    for c in comments:
-        comments_data.append({
-            'id': c.id,
-            'text': c.text,
-            'author': c.user.username if c.user else 'Пользователь'
-        })
+    comments_data = [{'id': c.id, 'text': c.text, 'author': c.user.username if c.user else 'Пользователь'} for c in
+                     comments]
     return jsonify(comments_data)
 
 
