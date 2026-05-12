@@ -72,3 +72,19 @@ class TeamProfile(db.Model):
     status = db.Column(db.String(20), default='active')
     date = db.Column(db.String(50))
     owner = db.relationship('User', backref='team_profiles', lazy=True)
+
+class Like(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    idea_id = db.Column(db.Integer, db.ForeignKey('idea.id'), nullable=False)
+    user = db.relationship('User', backref='likes', lazy=True)
+    idea = db.relationship('Idea', backref='likes', lazy=True)
+
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    idea_id = db.Column(db.Integer, db.ForeignKey('idea.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    user = db.relationship('User', backref='comments', lazy=True)
+    idea = db.relationship('Idea', backref='comments', lazy=True)
