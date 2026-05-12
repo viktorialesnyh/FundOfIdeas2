@@ -47,14 +47,14 @@
         <div class="ideas-grid" id="ideasGrid">
             {% if user.ideas %}
                 {% for idea in user.ideas|reverse %}
-                <div class="idea-card" 
-                     data-id="{{ idea.id }}" 
-                     data-title="{{ idea.title | e }}" 
-                     data-desc="{{ idea.description | e }}" 
-                     data-category="{{ idea.category }}" 
-                     data-visibility="{{ idea.visibility }}" 
-                     data-license="{{ idea.license }}" 
-                     data-tags="{{ idea.tags | e }}" 
+                <div class="idea-card"
+                     data-id="{{ idea.id }}"
+                     data-title="{{ idea.title | e }}"
+                     data-desc="{{ idea.description | e }}"
+                     data-category="{{ idea.category }}"
+                     data-visibility="{{ idea.visibility }}"
+                     data-license="{{ idea.license }}"
+                     data-tags="{{ idea.tags | e }}"
                      data-date="{{ idea.date }}">
                     <div class="card-header">
                         <span class="badge {{ 'published' if idea.visibility == 'published' else ('private' if idea.visibility == 'private' else 'draft') }}">
@@ -62,9 +62,18 @@
                         </span>
                         <span class="date">{{ idea.date }}</span>
                     </div>
+                    <!-- Лайки -->
+                    <div class="idea-likes" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #6b7280; font-size: 0.9rem;">
+                        <form action="/like_idea/{{ idea.id }}" method="POST" style="display: inline;">
+                            <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.4rem; padding: 0; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">
+                                {{ '❤️' if idea.id in liked_ideas else '🤍' }}
+                            </button>
+                        </form>
+                        <span style="font-weight: 500;">{{ idea.likes|length }} лайков</span>
+                    </div>
                     <h3>{{ idea.title }}</h3>
                     <p>{{ idea.description }}</p>
-                    
+
                     <div class="card-tags">
                         {% if idea.tags %}
                             {% for tag in idea.tags.split(',') %}
@@ -74,11 +83,11 @@
                             {% endfor %}
                         {% endif %}
                         <span class="license-badge">
-                            {{ '© Все права' if idea.license == 'all_rights' else 
-                               'CC BY' if idea.license == 'cc_by' else 
-                               'CC BY-SA' if idea.license == 'cc_by_sa' else 
-                               'CC BY-NC' if idea.license == 'cc_by_nc' else 
-                               'MIT' if idea.license == 'mit' else 
+                            {{ '© Все права' if idea.license == 'all_rights' else
+                               'CC BY' if idea.license == 'cc_by' else
+                               'CC BY-SA' if idea.license == 'cc_by_sa' else
+                               'CC BY-NC' if idea.license == 'cc_by_nc' else
+                               'MIT' if idea.license == 'mit' else
                                'Public Domain' }}
                         </span>
                     </div>
@@ -86,33 +95,9 @@
                     <div class="card-actions">
                         <button class="action-btn" onclick="openViewModal(this.closest('.idea-card'))">🔍 Открыть</button>
                         <button class="action-btn outline" onclick="openEditModal(this.closest('.idea-card'))">✏️ Редактировать</button>
+                        <button class="action-btn outline" onclick="openCommentsModal({{ idea.id }})">💬 Комментарии ({{ idea.comments|length }})</button>
                     </div>
                 </div>
-            <!-- Форма комментария -->
-                <div class="comment-section" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee;">
-                    <form action="/add_comment/{{ idea.id }}" method="POST" style="display: flex; gap: 5px;">
-                        <input type="text" name="comment_text" placeholder="Комментарий..." required style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
-                        <button type="submit" style="background: #374151; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">➤</button>
-                    </form>
-                </div>
-            <!-- Список комментариев -->
-                <div style="margin-top: 10px; max-height: 100px; overflow-y: auto; font-size: 0.85rem;">
-                    {% for comment in idea.comments|sort(attribute='id', reverse=true) %}
-                    <div style="margin-bottom: 4px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px;">
-                        <b style="color: #374151;">{{ comment.user.username }}</b>: {{ comment.text }}
-                    </div>
-                    {% endfor %}
-                </div>
-
-            <!-- Лайки (кнопка и счетчик) -->
-            <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 0.9rem;">
-                <form action="/like_idea/{{ idea.id }}" method="POST" style="display: inline;">
-                    <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0;">
-                        {{ '❤️' if idea.id in liked_ideas else '🤍' }}
-                    </button>
-                </form>
-                <span style="color: #555;">{{ idea.likes|length }}</span>
-            </div>
                 {% endfor %}
             {% else %}
                 <div class="empty-state">
@@ -123,8 +108,6 @@
                 </div>
             {% endif %}
         </div>
-
-        <!-- Модальное окно создания идеи -->
         <div id="createIdeaModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -260,6 +243,28 @@
             </div>
         </div>
     </main>
+        <!-- === МОДАЛЬНОЕ ОКНО КОММЕНТАРИЕВ === -->
+    <div id="commentsModal" class="modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2 id="commentsModalTitle">💬 Комментарии</h2>
+                <button class="modal-close" onclick="closeCommentsModal()">&times;</button>
+            </div>
+            <div style="padding: 24px;">
+                <form id="commentForm" method="POST" style="margin-bottom: 20px;">
+                    <textarea name="comment_text" placeholder="Напишите комментарий..." required
+                              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px;
+                                     resize: vertical; font-family: inherit; outline: none; min-height: 80px;"></textarea>
+                    <button type="submit" style="margin-top: 10px; background: #374151; color: white;
+                               border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;
+                               font-weight: 500;">Отправить</button>
+                </form>
+                <div id="commentsList" style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
+                    <!-- Сюда JS подгрузит комментарии -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>

@@ -218,3 +218,139 @@
     background: #fef3c7;
     color: #92400e;
 }
+/* === ИСПРАВЛЕНИЕ РАСПОЛОЖЕНИЯ === */
+
+/* Карточка идеи */
+.idea-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Блок с лайком - убираем вниз карточки */
+.idea-card .like-block {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Комментарии - скрываем из карточки, показываем только в модалке */
+.idea-card .comments-block {
+    display: none;
+}
+
+/* В модальном окне показываем всё */
+.modal .idea-form {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Лайки в модалке */
+.modal .like-section {
+    margin: 20px 0;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Комментарии в модалке */
+.modal .comments-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #e5e7eb;
+}
+
+.modal .comments-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: #111827;
+}
+
+/* Форма комментария */
+.modal .comment-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.modal .comment-form textarea {
+    flex: 1;
+    min-height: 80px;
+    padding: 12px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.modal .comment-form textarea:focus {
+    border-color: #374151;
+}
+
+.modal .comment-form button {
+    background: #374151;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    align-self: flex-end;
+}
+
+/* Список комментариев */
+.modal .comments-list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modal .comment-item {
+    background: #f9fafb;
+    padding: 14px;
+    border-radius: 8px;
+    border-left: 3px solid #374151;
+}
+
+.modal .comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.modal .comment-author {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.modal .comment-date {
+    color: #9ca3af;
+    font-size: 0.8rem;
+}
+
+.modal .comment-text {
+    margin: 0;
+    color: #111827;
+    line-height: 1.5;
+    font-size: 0.9rem;
+}
+
+/* Пустое состояние */
+.modal .no-comments {
+    text-align: center;
+    color: #9ca3af;
+    padding: 30px;
+    font-style: italic;
+}

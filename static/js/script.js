@@ -229,3 +229,38 @@ function closeAnyModal(modalId) {
         modal.classList.remove('active');
     }
 }
+// === ЛОГИКА МОДАЛЬНОГО ОКНА КОММЕНТАРИЕВ ===
+
+let currentIdeaIdForComments = null;
+
+function openCommentsModal(ideaId) {
+    currentIdeaIdForComments = ideaId;
+    // Устанавливаем ссылку формы на правильный маршрут
+    const form = document.getElementById('commentForm');
+    if (form) {
+        form.action = `/add_comment/${ideaId}`;
+    }
+    // Показываем модальное окно
+    const modal = document.getElementById('commentsModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+    // В идеале тут нужно загрузить список комментариев через AJAX,
+    // но пока мы будем обновлять страницу при отправке.
+}
+
+function closeCommentsModal() {
+    const modal = document.getElementById('commentsModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    currentIdeaIdForComments = null;
+}
+
+// Закрытие по клику вне окна
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('commentsModal');
+    if (e.target === modal) {
+        closeCommentsModal();
+    }
+});
