@@ -6,13 +6,9 @@
     <title>Фонд Идей — Главная</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-    <style>
-        .card-link { text-decoration: none; color: inherit; display: block; height: 100%; }
-        .card-link .action-card { height: 100%; transition: transform 0.2s, box-shadow 0.2s; }
-        .card-link:hover .action-card { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
-    </style>
 </head>
 <body class="dash-body">
+    <!-- Навбар -->
     <nav class="navbar">
         <div class="nav-brand">💡 Фонд Идей</div>
         <div class="nav-links">
@@ -28,106 +24,145 @@
         </div>
     </nav>
 
-    <main class="dashboard-main">
-        <div class="welcome-block">
-            <h1>Добро пожаловать, {{ username }}! 👋</h1>
-            <p>Что вы хотите сделать сегодня?</p>
-        </div>
-
-        <div class="cards-grid">
-            <!-- 1. Создать идею -->
-            <div class="action-card" style="cursor: pointer;" onclick="openModal()">
+    <!-- Основной контент -->
+    <main class="dashboard-layout">
+        <!-- Левая колонка: Меню действий -->
+        <aside class="dashboard-sidebar">
+            <div class="action-card" onclick="openModal()">
                 <div class="card-icon">➕</div>
                 <h3>Создать идею</h3>
                 <p>Опубликуйте новую идею проекта</p>
             </div>
 
-            <!-- 2. Запись в дневник -->
-            <a href="{{ url_for('diary') }}" class="card-link">
-                <div class="action-card">
-                    <div class="card-icon">📝</div>
-                    <h3>Запись в дневник</h3>
-                    <p>Добавьте новую запись о прогрессе</p>
-                </div>
+            <a href="{{ url_for('diary') }}" class="action-card sidebar-link">
+                <div class="card-icon">📝</div>
+                <h3>Запись в дневник</h3>
+                <p>Добавьте новую запись о прогрессе</p>
             </a>
 
-            <!-- 3. Найти команду -->
-            <a href="{{ url_for('team') }}" class="card-link">
-                <div class="action-card">
-                    <div class="card-icon">🤝</div>
-                    <h3>Найти команду</h3>
-                    <p>Найдите единомышленников для проекта</p>
-                </div>
+            <a href="{{ url_for('team') }}" class="action-card sidebar-link">
+                <div class="card-icon">🤝</div>
+                <h3>Найти команду</h3>
+                <p>Найдите единомышленников для проекта</p>
             </a>
 
-            <!-- 4. Исследовать -->
-            <a href="{{ url_for('ideas') }}" class="card-link">
-                <div class="action-card">
-                    <div class="card-icon">🔍</div>
-                    <h3>Исследовать</h3>
-                    <p>Посмотрите идеи других участников</p>
-                </div>
+            <a href="{{ url_for('ideas') }}" class="action-card sidebar-link">
+                <div class="card-icon">🔍</div>
+                <h3>Исследовать</h3>
+                <p>Посмотрите идеи других участников</p>
             </a>
-        </div>
+        </aside>
+
+        <!-- Правая колонка: Лента рекомендаций -->
+        <section class="feed-container">
+            <h2 class="feed-title">Рекомендации для вас</h2>
+
+            {% if recommended_ideas %}
+                {% for idea in recommended_ideas %}
+                <article class="feed-card idea-card"
+                         data-id="{{ idea.id }}"
+                         data-title="{{ idea.title }}"
+                         data-desc="{{ idea.description }}"
+                         data-category="{{ idea.category }}"
+                         data-visibility="{{ idea.visibility }}"
+                         data-license="{{ idea.license }}"
+                         data-tags="{{ idea.tags }}"
+                         data-date="{{ idea.date }}">
+
+                    <div class="feed-card-header card-header">
+                        <div class="feed-author">
+                            <div class="feed-avatar member-avatar">
+                                {{ idea.author.username[:2].upper() if idea.author else '??' }}
+                            </div>
+                            <div>
+                                <span class="feed-name">{{ idea.author.username if idea.author else 'Аноним' }}</span>
+                                <span class="feed-time">{{ idea.date }}</span>
+                            </div>
+                        </div>
+                        <span class="badge published">🌍 Опубликована</span>
+                    </div>
+
+                    <h3 class="feed-title-text">{{ idea.title }}</h3>
+                    <p class="feed-desc">{{ idea.description[:180] }}{% if idea.description|length > 180 %}...{% endif %}</p>
+
+                    <div class="feed-tags card-tags">
+                        {% if idea.tags %}
+                            {% for tag in idea.tags.split(',') %}
+                                {% if tag.strip() %}
+                                    <span>#{{ tag.strip() }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="feed-actions card-actions">
+                        <!-- Блок лайков -->
+                        <button class="feed-like-btn"
+                                data-id="{{ idea.id }}"
+                                data-liked="{{ 'true' if idea.id in liked_ideas else 'false' }}"
+                                onclick="toggleLike(this)">
+                            <span class="like-icon">{{ '❤️' if idea.id in liked_ideas else '🤍' }}</span>
+                            <span class="like-count">{{ idea.likes|length }}</span>
+                        </button>
+
+                        <button class="action-btn" onclick="openViewModal(this.closest('.idea-card'))"> Открыть</button>
+                        <button class="action-btn outline" onclick="openCommentsModal({{ idea.id }})">💬 Комментарии</button>
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <div class="empty-feed">
+                    <h3> Пока нет рекомендаций</h3>
+                    <p>Здесь появятся идеи других участников, которые могут быть вам интересны.</p>
+                    <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-light);">Подсказка: Добавьте навыки в профиль или создайте свои идеи, чтобы алгоритм мог подобрать лучшее.</p>
+                </div>
+            {% endif %}
+        </section>
     </main>
-        <!-- Модальное окно создания идеи -->
+
+    <!-- Модальные окна (скрыты по умолчанию) -->
+
+    <!-- 1. Создать идею -->
     <div id="createIdeaModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>➕ Создать новую идею</h2>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
-            <form method="POST" action="/create_idea" class="idea-form">
-                <div class="form-group">
-                    <label>Название идеи *</label>
-                    <input type="text" name="title" placeholder="Например: AI-помощник для студентов" required>
-                </div>
-                <div class="form-group">
-                    <label>Описание *</label>
-                    <textarea name="description" rows="4" placeholder="Опишите вашу идею подробно..." required></textarea>
-                </div>
-                                <div class="form-row">
+            <form class="idea-form" action="{{ url_for('create_idea') }}" method="POST">
+                <div class="form-group"><label for="title">Название идеи *</label><input type="text" id="title" name="title" required></div>
+                <div class="form-group"><label for="description">Описание *</label><textarea id="description" name="description" rows="4" required></textarea></div>
+                <div class="form-row">
                     <div class="form-group">
-                        <label>Категория</label>
-                        <select name="category">
-                            <option value="edtech">EdTech</option>
-                            <option value="health">HealthTech</option>
-                            <option value="fintech">FinTech</option>
-                            <option value="other">Другое</option>
+                        <label for="category">Категория</label>
+                        <select id="category" name="category">
+                            <option value="edtech"> EdTech</option>
+                            <option value="health">🏥 HealthTech</option>
+                            <option value="fintech">💰 FinTech</option>
+                            <option value="other"> Другое</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Видимость</label>
-                        <select name="visibility">
+                        <label for="visibility">Видимость</label>
+                        <select id="visibility" name="visibility">
                             <option value="draft">📝 Черновик</option>
                             <option value="private">🔒 Приватная</option>
-                            <option value="published">🌍 Опубликовать</option>
+                            <option value="published"> Опубликовать</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Лицензия</label>
-                    <select name="license">
+                    <label for="license">Лицензия</label>
+                    <select id="license" name="license">
                         <option value="all_rights">© Все права защищены</option>
-                        <option value="cc_by">CC BY (с указанием автора)</option>
-                        <option value="cc_by_sa">CC BY-SA (с той же лицензией)</option>
-                        <option value="cc_by_nc">CC BY-NC (некоммерческая)</option>
-                        <option value="mit">MIT License (открытый код)</option>
-                        <option value="public_domain">🌍 Public Domain</option>
+                        <option value="cc_by">CC BY</option>
+                        <option value="cc_by_sa">CC BY-SA</option>
+                        <option value="cc_by_nc">CC BY-NC</option>
+                        <option value="mit">MIT License</option>
+                        <option value="public_domain"> Public Domain</option>
                     </select>
                 </div>
-                    <div class="form-group">
-                        <label>Статус</label>
-                        <select name="status">
-                            <option value="draft">Черновик</option>
-                            <option value="published">Опубликовать</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Теги (через запятую)</label>
-                    <input type="text" name="tags" placeholder="Python, AI, Mobile">
-                </div>
+                <div class="form-group"><label for="tags">Теги (через запятую)</label><input type="text" id="tags" name="tags" placeholder="edtech, startup, ai"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeModal()">Отмена</button>
                     <button type="submit" class="btn-create-idea">Создать идею</button>
@@ -135,6 +170,89 @@
             </form>
         </div>
     </div>
+
+    <!-- 2. Просмотр идеи -->
+    <div id="viewIdeaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2> Просмотр идеи</h2>
+                <button class="modal-close" onclick="closeAnyModal('viewIdeaModal')">&times;</button>
+            </div>
+            <div class="idea-form">
+                <div class="form-group"><label>Название</label><h3 id="viewTitle" style="margin: 8px 0;"></h3></div>
+                <div class="form-group"><label id="viewDate"></label></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Категория</label><p id="viewCategory" style="margin: 8px 0;"></p></div>
+                    <div class="form-group"><label>Видимость</label><span id="viewVisibility" class="badge" style="margin: 8px 0; display: inline-block;"></span></div>
+                </div>
+                <div class="form-group"><label>Описание</label><p id="viewDesc" style="margin: 8px 0; line-height: 1.6;"></p></div>
+                <div class="form-group"><label>Теги</label><div id="viewTags" class="card-tags" style="margin: 8px 0;"></div></div>
+                <div class="form-group"><label id="viewLicense"></label></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Редактирование идеи -->
+    <div id="editIdeaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Редактировать идею</h2>
+                <button class="modal-close" onclick="closeAnyModal('editIdeaModal')">&times;</button>
+            </div>
+            <form id="editForm" class="idea-form" method="POST">
+                <div class="form-group"><label for="editTitle">Название идеи *</label><input type="text" id="editTitle" name="title" required></div>
+                <div class="form-group"><label for="editDesc">Описание *</label><textarea id="editDesc" name="description" rows="4" required></textarea></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editCategory">Категория</label>
+                        <select id="editCategory" name="category">
+                            <option value="edtech">🎓 EdTech</option><option value="health">🏥 HealthTech</option>
+                            <option value="fintech">💰 FinTech</option><option value="other">📦 Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editVisibility">Видимость</label>
+                        <select id="editVisibility" name="visibility">
+                            <option value="draft"> Черновик</option><option value="private">🔒 Приватная</option>
+                            <option value="published">🌍 Опубликовать</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group"><label for="editLicense">Лицензия</label>
+                    <select id="editLicense" name="license">
+                        <option value="all_rights">© Все права защищены</option><option value="cc_by">CC BY</option>
+                        <option value="cc_by_sa">CC BY-SA</option><option value="cc_by_nc">CC BY-NC</option>
+                        <option value="mit">MIT License</option><option value="public_domain">🌍 Public Domain</option>
+                    </select>
+                </div>
+                <div class="form-group"><label for="editTags">Теги</label><input type="text" id="editTags" name="tags"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeAnyModal('editIdeaModal')">Отмена</button>
+                    <button type="submit" class="btn-create-idea">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Комментарии -->
+    <div id="commentsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💬 Комментарии</h2>
+                <button class="modal-close" onclick="closeCommentsModal()">&times;</button>
+            </div>
+            <div class="comments-section">
+                <form id="commentForm" class="comment-form" method="POST">
+                    <textarea name="comment_text" placeholder="Напишите комментарий..." required></textarea>
+                    <button type="submit">Отправить</button>
+                </form>
+                <div class="comments-list">
+                    <p class="no-comments">Загрузка...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
