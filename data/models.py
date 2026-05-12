@@ -88,3 +88,26 @@ class Comment(db.Model):
     text = db.Column(db.Text, nullable=False)
     user = db.relationship('User', backref='comments', lazy=True)
     idea = db.relationship('Idea', backref='comments', lazy=True)
+
+# === МОДЕЛИ КОМАНД ===
+
+class Team(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    leader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    status = db.Column(db.String(20), default='active')  # active, recruiting, closed
+    date = db.Column(db.String(50))
+    # Связи
+    leader = db.relationship('User', backref='led_teams', lazy=True)
+    members = db.relationship('TeamMember', backref='team', lazy=True)
+
+
+class TeamMember(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role = db.Column(db.String(50))
+    joined_date = db.Column(db.String(50))
+    # Связи
+    user = db.relationship('User', backref='team_memberships', lazy=True)
