@@ -130,12 +130,9 @@ document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) closeModal();
 });
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeModal(); });
-function openViewModal(card) { /* Логика просмотра */ }
-function openEditModal(card) { /* Логика редактирования */ }
 
 // === МОДАЛЬНОЕ ОКНО: ПРОСМОТР ИДЕИ ===
 function openViewModal(card) {
-    // Получаем данные из data-атрибутов карточки
     const title = card.dataset.title;
     const desc = card.dataset.desc;
     const category = card.dataset.category;
@@ -144,33 +141,19 @@ function openViewModal(card) {
     const tags = card.dataset.tags;
     const date = card.dataset.date;
 
-    // Заполняем поля модального окна
     document.getElementById('viewTitle').textContent = title;
     document.getElementById('viewDate').textContent = `📅 ${date}`;
 
-    // Категория
-    const catNames = {
-        'edtech': '🎓 EdTech',
-        'health': '🏥 HealthTech',
-        'fintech': '💰 FinTech',
-        'other': '📦 Другое'
-    };
+    const catNames = { 'edtech': '🎓 EdTech', 'health': '🏥 HealthTech', 'fintech': '💰 FinTech', 'other': '📦 Другое' };
     document.getElementById('viewCategory').textContent = catNames[category] || category;
 
-    // Видимость
-    const visNames = {
-        'draft': '📝 Черновик',
-        'private': '🔒 Приватная',
-        'published': '🌍 Опубликована'
-    };
+    const visNames = { 'draft': '📝 Черновик', 'private': '🔒 Приватная', 'published': '🌍 Опубликована' };
     const visBadge = document.getElementById('viewVisibility');
     visBadge.textContent = visNames[visibility] || visibility;
     visBadge.className = 'badge ' + visibility;
 
-    // Описание
     document.getElementById('viewDesc').textContent = desc;
 
-    // Теги
     const tagsContainer = document.getElementById('viewTags');
     tagsContainer.innerHTML = '';
     if (tags) {
@@ -183,27 +166,18 @@ function openViewModal(card) {
         });
     }
 
-    // Лицензия
     const licNames = {
-        'all_rights': '© Все права защищены',
-        'cc_by': 'CC BY (с указанием автора)',
-        'cc_by_sa': 'CC BY-SA (с той же лицензией)',
-        'cc_by_nc': 'CC BY-NC (некоммерческая)',
-        'mit': 'MIT License (открытый код)',
-        'public_domain': '🌍 Public Domain'
+        'all_rights': '© Все права защищены', 'cc_by': 'CC BY', 'cc_by_sa': 'CC BY-SA',
+        'cc_by_nc': 'CC BY-NC', 'mit': 'MIT License', 'public_domain': '🌍 Public Domain'
     };
     document.getElementById('viewLicense').textContent = `Лицензия: ${licNames[license] || license}`;
 
-    // Показываем модальное окно
     document.getElementById('viewIdeaModal').classList.add('active');
 }
 
 // === МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ ИДЕИ ===
 function openEditModal(card) {
-    // Получаем ID идеи для формирования action формы
     const ideaId = card.dataset.id;
-
-    // Заполняем поля формы
     document.getElementById('editTitle').value = card.dataset.title;
     document.getElementById('editDesc').value = card.dataset.desc;
     document.getElementById('editCategory').value = card.dataset.category;
@@ -211,75 +185,90 @@ function openEditModal(card) {
     document.getElementById('editLicense').value = card.dataset.license;
     document.getElementById('editTags').value = card.dataset.tags;
 
-    // Устанавливаем правильный action для формы с ID идеи
     const editForm = document.getElementById('editForm');
     editForm.action = `/update_idea/${ideaId}`;
 
-    // Показываем модальное окно
     document.getElementById('editIdeaModal').classList.add('active');
 }
 
-// === ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: закрытие конкретного модального окна ===
+// === ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ===
 function closeAnyModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    if (modal) modal.classList.remove('active');
 }
 
-// === ЛОГИКА МОДАЛЬНОГО ОКНА КОММЕНТАРИЕВ ===
+// === ЗАЩИТА ОТ XSS ===
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// === ЛОГИКА МОДАЛЬНОГО ОКНА КОММЕНТАРИЕВ (С ПРОСМОТРОМ) ===
 let currentIdeaIdForComments = null;
-function openCommentsModal(ideaId) {
+
+async function openCommentsModal(ideaId) {
     currentIdeaIdForComments = ideaId;
-    // Устанавливаем ссылку формы на правильный маршрут
     const form = document.getElementById('commentForm');
-    if (form) {
-        form.action = `/add_comment/${ideaId}`;
-    }
-    // Показываем модальное окно
+    if (form) form.action = `/add_comment/${ideaId}`;
+
     const modal = document.getElementById('commentsModal');
-    if (modal) {
-        modal.classList.add('active');
+    if (modal) modal.classList.add('active');
+
+    const list = document.querySelector('#commentsModal .comments-list');
+    if (!list) return;
+
+    list.innerHTML = '<p class="no-comments">Загрузка комментариев...</p>';
+
+    try {
+        const response = await fetch(`/get_comments/${ideaId}`);
+        if (!response.ok) throw new Error('Failed to load');
+        const comments = await response.json();
+
+        list.innerHTML = '';
+        if (comments.length === 0) {
+            list.innerHTML = '<p class="no-comments">Пока нет комментариев. Будьте первым!</p>';
+        } else {
+            comments.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'comment-item';
+                item.innerHTML = `
+                    <div class="comment-header">
+                        <span class="comment-author">${escapeHtml(c.author)}</span>
+                    </div>
+                    <p class="comment-text">${escapeHtml(c.text)}</p>
+                `;
+                list.appendChild(item);
+            });
+        }
+    } catch (error) {
+        list.innerHTML = '<p class="no-comments">Ошибка загрузки комментариев.</p>';
+        console.error(error);
     }
-    // В идеале тут нужно загрузить список комментариев через AJAX,
-    // но пока мы будем обновлять страницу при отправке.
 }
 
 function closeCommentsModal() {
     const modal = document.getElementById('commentsModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    if (modal) modal.classList.remove('active');
     currentIdeaIdForComments = null;
 }
 
-// Закрытие по клику вне окна
 document.addEventListener('click', (e) => {
     const modal = document.getElementById('commentsModal');
-    if (e.target === modal) {
-        closeCommentsModal();
-    }
+    if (e.target === modal) closeCommentsModal();
 });
 
 // === ЛОГИКА ЛАЙКОВ В ЛЕНТЕ (AJAX) ===
 function toggleLike(btn) {
     const ideaId = btn.dataset.id;
-    const isLiked = btn.dataset.liked === 'true';
-
-    // Отправляем запрос на сервер
     fetch(`/like_idea/${ideaId}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(response => response.json())
     .then(data => {
-        // Обновляем UI
         btn.dataset.liked = data.is_liked;
         btn.querySelector('.like-count').textContent = data.likes;
-
         const icon = btn.querySelector('.like-icon');
         if (data.is_liked) {
             icon.textContent = '❤️';
@@ -291,7 +280,6 @@ function toggleLike(btn) {
     })
     .catch(error => {
         console.error('Error:', error);
-        // В случае ошибки можно перенаправить на страницу входа или просто ничего не делать
         window.location.href = '/';
     });
 }

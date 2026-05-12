@@ -204,7 +204,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-right: auto; /* Сдвигает остальные кнопки вправо */
+    margin-right: auto;
 }
 
 .feed-like-btn:hover {
@@ -241,7 +241,7 @@
     background: transparent;
 }
 
-/* === МОДАЛЬНЫЕ ОКНА (Копия из styles.css/ideas.css для изоляции) === */
+/* === МОДАЛЬНЫЕ ОКНА === */
 .modal {
     display: none;
     position: fixed;
@@ -314,12 +314,17 @@
 .btn-create-idea { background: #374151; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; }
 .btn-create-idea:hover { background: #1f2937; }
 
+/* === КОММЕНТАРИИ В МОДАЛКЕ === */
 .comments-section { padding: 24px; }
 .comment-form { display: flex; gap: 10px; margin-bottom: 20px; }
 .comment-form textarea { flex: 1; min-height: 80px; padding: 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; resize: vertical; font-family: inherit; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
 .comment-form textarea:focus { border-color: #374151; }
 .comment-form button { background: #374151; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; align-self: flex-end; }
 .comments-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.comment-item { background: #f9fafb; padding: 14px; border-radius: 8px; border-left: 3px solid #374151; }
+.comment-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.comment-author { font-weight: 600; color: #374151; font-size: 0.9rem; }
+.comment-text { margin: 0; color: #111827; line-height: 1.5; font-size: 0.9rem; }
 .no-comments { text-align: center; color: #9ca3af; padding: 30px; font-style: italic; }
 
 /* Адаптив */

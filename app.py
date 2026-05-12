@@ -110,7 +110,7 @@ def dashboard():
         likes_count = Like.query.filter_by(idea_id=idea.id).count()
         score += likes_count * 2
 
-        # Д) Свежесть (новым идеям бонус, старым штраф)
+        # Д) Свежесть (новым идеям бонус)
         try:
             idea_date = datetime.datetime.strptime(idea.date, '%d %b %Y')
             days_old = (now - idea_date).days
@@ -121,13 +121,9 @@ def dashboard():
 
         scored_ideas.append({'idea': idea, 'score': score})
 
-    # 3. Сортировка: Сначала релевантность (score), потом новизна (id)
+    # 3. Сортировка
     scored_ideas.sort(key=lambda x: (x['score'], x['idea'].id), reverse=True)
-
-    # 4. Берем топ-15
     recommended_ideas = [item['idea'] for item in scored_ideas[:15]]
-
-    # 5. Получаем ID лайкнутых идей для корректного отображения в ленте
     liked_ideas = {l.idea_id for l in Like.query.filter_by(user_id=user.id).all()}
 
     return render_template('dashboard.html', username=user.username, recommended_ideas=recommended_ideas,
@@ -157,12 +153,8 @@ def diary():
         text = request.form.get('entry_text')
         tag = request.form.get('tag', 'success')
         if text:
-            db.session.add(DiaryEntry(
-                user_id=user.id,
-                text=text,
-                tag=tag,
-                date=datetime.datetime.now().strftime('%d %b, %H:%M')
-            ))
+            db.session.add(
+                DiaryEntry(user_id=user.id, text=text, tag=tag, date=datetime.datetime.now().strftime('%d %b, %H:%M')))
             db.session.commit()
             return redirect(url_for('diary'))
     entries = DiaryEntry.query.filter_by(user_id=user.id).order_by(DiaryEntry.id.desc()).all()
@@ -272,13 +264,9 @@ def create_idea():
     user = get_current_user()
     if not user: return redirect(url_for('index'))
     new_idea = Idea(
-        user_id=user.id,
-        title=request.form.get('title'),
-        description=request.form.get('description'),
-        category=request.form.get('category', 'other'),
-        visibility=request.form.get('visibility', 'draft'),
-        license=request.form.get('license', 'all_rights'),
-        tags=request.form.get('tags', ''),
+        user_id=user.id, title=request.form.get('title'), description=request.form.get('description'),
+        category=request.form.get('category', 'other'), visibility=request.form.get('visibility', 'draft'),
+        license=request.form.get('license', 'all_rights'), tags=request.form.get('tags', ''),
         date=datetime.datetime.now().strftime('%d %b %Y')
     )
     db.session.add(new_idea)
@@ -331,7 +319,7 @@ def delete_team_profile():
     return redirect(url_for('team'))
 
 
-# === ЛАЙКИ/КОММЕНТАРИИ ===
+# === ЛАЙКИ И КОММЕНТАРИИ ===
 @app.route('/like_idea/<int:idea_id>', methods=['POST'])
 def like_idea(idea_id):
     user = get_current_user()
@@ -347,13 +335,29 @@ def like_idea(idea_id):
 
     db.session.commit()
 
-    # Если запрос AJAX, возвращаем JSON
     if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         new_count = Like.query.filter_by(idea_id=idea_id).count()
         return jsonify({'likes': new_count, 'is_liked': is_liked})
 
-    # Иначе редирект (для обратной совместимости со страницей /ideas)
     return redirect(url_for('ideas'))
+
+
+@app.route('/get_comments/<int:idea_id>', methods=['GET'])
+def get_comments(idea_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    # В модели Comment нет поля date, поэтому возвращаем только текст и автора
+    comments = Comment.query.filter_by(idea_id=idea_id).order_by(Comment.id.desc()).all()
+    comments_data = []
+    for c in comments:
+        comments_data.append({
+            'id': c.id,
+            'text': c.text,
+            'author': c.user.username if c.user else 'Пользователь'
+        })
+    return jsonify(comments_data)
 
 
 @app.route('/add_comment/<int:idea_id>', methods=['POST'])
