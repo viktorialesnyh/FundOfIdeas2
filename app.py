@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import datetime
-from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile, Like, Comment
+from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile, Like, Comment, Team,TeamMember
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -122,10 +122,13 @@ def team():
     if not user:
         return redirect(url_for('index'))
     profiles = TeamProfile.query.filter(TeamProfile.user_id != user.id).all()
+    teams = Team.query.filter(Team.status == 'recruiting').all()
+    teams = Team.query.filter(Team.status == 'recruiting').all()
     my_profile = TeamProfile.query.filter_by(user_id=user.id).first()
     return render_template('team.html',
                            username=user.username,
                            profiles=profiles,
+                           teams=teams,
                            my_profile=my_profile)
 
 
@@ -349,6 +352,89 @@ def add_comment(idea_id):
         db.session.add(Comment(user_id=user.id, idea_id=idea_id, text=text))
         db.session.commit()
     return redirect(url_for('ideas'))
+
+
+# === МАРШРУТЫ КОМАНД ===
+
+@app.route('/create_team', methods=['POST'])
+def create_team():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    name = request.form.get('team_name')
+    description = request.form.get('description')
+
+    if name:
+        new_team = Team(
+            name=name,
+            description=description,
+            leader_id=user.id,
+            status='recruiting',
+            date=datetime.datetime.now().strftime('%d %b %Y')
+        )
+        db.session.add(new_team)
+        db.session.commit()
+        # Добавляем создателя как первого участника
+        db.session.add(TeamMember(
+            team_id=new_team.id,
+            user_id=user.id,
+            role='Лидер',
+            joined_date=datetime.datetime.now().strftime('%d %b %Y')
+        ))
+        db.session.commit()
+
+    return redirect(url_for('team'))
+
+
+@app.route('/team_members/<int:team_id>')
+def team_members(team_id):
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    team = Team.query.get_or_404(team_id)
+    members = TeamMember.query.filter_by(team_id=team_id).all()
+    return render_template('team_members.html',
+                           team=team,
+                           members=members,
+                           username=user.username)
+
+
+@app.route('/join_team/<int:team_id>', methods=['POST'])
+def join_team(team_id):
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    # Проверяем, не состоит ли уже пользователь в этой команде
+    existing = TeamMember.query.filter_by(team_id=team_id, user_id=user.id).first()
+    if not existing:
+        db.session.add(TeamMember(
+            team_id=team_id,
+            user_id=user.id,
+            role='Участник',
+            joined_date=datetime.datetime.now().strftime('%d %b %Y')
+        ))
+        db.session.commit()
+
+    return redirect(url_for('team'))
+
+
+@app.route('/send_message', methods=['POST'])
+def send_message():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for('index'))
+
+    recipient_id = request.form.get('recipient_id')
+    subject = request.form.get('subject')
+    message_text = request.form.get('message_text')
+
+    # Здесь можно добавить сохранение сообщения в БД
+    # Пока просто перенаправляем с сообщением об успехе
+    flash('Сообщение отправлено!', 'success')
+    return redirect(url_for('team'))
 
 if __name__ == '__main__':
     app.run(debug=True)

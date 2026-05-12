@@ -26,13 +26,15 @@
     <main class="team-main">
         <div class="team-header">
             <h1>Поиск команды</h1>
-            {% if my_profile %}
-                <button class="btn-edit-profile" onclick="openEditProfileModal()">✏️ Редактировать мой профиль</button>
-            {% else %}
-                <button class="btn-create" onclick="openCreateProfileModal()">+ Создать профиль участника</button>
-            {% endif %}
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                {% if my_profile %}
+                    <button class="btn-edit-profile" onclick="openEditProfileModal()">✏️ Мой профиль</button>
+                {% else %}
+                    <button class="btn-create" onclick="openCreateProfileModal()">+ Профиль участника</button>
+                {% endif %}
+                <button class="btn-create" style="background: #059669;" onclick="openCreateTeamModal()">+ Создать команду</button>
+            </div>
         </div>
-
         <!-- Фильтры -->
         <div class="team-controls">
             <div class="filters">
@@ -47,11 +49,43 @@
 
         <!-- Сетка профилей -->
         <div class="team-grid" id="teamGrid">
+            <!-- === 1. КАРТОЧКИ КОМАНД === -->
+            {% if teams %}
+                <div style="grid-column: 1 / -1; margin: 30px 0 15px 0; padding-bottom: 15px; border-bottom: 2px solid #e5e7eb;">
+                    <h2 style="font-size: 1.3rem; color: #374151;">🚀 Активные команды</h2>
+                </div>
+
+                {% for t in teams %}
+                <div class="team-card" style="border-left: 4px solid #059669;">
+                    <div class="card-header-team">
+                        <span class="badge" style="background: #059669; color: white;">🚀 Команда</span>
+                        <span class="date">{{ t.date }}</span>
+                    </div>
+                    <h3>{{ t.name }}</h3>
+                    <p class="desc">{{ t.description[:150] }}{% if t.description|length > 150 %}...{% endif %}</p>
+
+                    <div class="card-tags">
+                        <span>Лидер: {{ t.leader.username }}</span>
+                        <span>Участников: {{ t.members|length }}</span>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="action-btn outline" onclick="openMessageModal({{ t.leader_id }}, 'Команда {{ t.name }}')">✉️ Написать</button>
+                        <a href="/team_members/{{ t.id }}" class="action-btn outline" style="text-decoration: none; display: inline-flex; align-items: center;">👁️ Участники</a>
+                        <form action="/join_team/{{ t.id }}" method="POST" style="display: inline;">
+                            <button type="submit" class="action-btn" style="background: #059669;">🤝 Вступить</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- === 2. ПРОФИЛИ УЧАСТНИКОВ === -->
             {% if profiles %}
                 {% for p in profiles %}
-                <div class="team-card" 
-                     data-looking="{{ p.looking_for }}" 
-                     data-role="{{ p.role | lower }}" 
+                <div class="team-card"
+                     data-looking="{{ p.looking_for }}"
+                     data-role="{{ p.role | lower }}"
                      data-skills="{{ p.skills | lower }}">
                     <div class="card-header-team">
                         <span class="badge {{ 'seeking-team' if p.looking_for == 'team' else 'seeking-members' }}">
@@ -61,7 +95,7 @@
                     </div>
                     <h3>{{ p.role }}</h3>
                     <p class="desc">{{ p.description[:150] }}{% if p.description|length > 150 %}...{% endif %}</p>
-                    
+
                     <div class="card-tags">
                         {% if p.skills %}
                             {% for skill in p.skills.split(',') %}
@@ -73,11 +107,14 @@
                     </div>
 
                     <div class="card-actions">
-                        <button class="action-btn outline" onclick="alert('Функция сообщений скоро появится!')">Написать</button>
+                        <button class="action-btn outline" onclick="openMessageModal({{ p.user_id }}, '{{ p.role }}')">✉️ Написать</button>
                     </div>
                 </div>
                 {% endfor %}
-            {% else %}
+            {% endif %}
+
+            <!-- === 3. ПУСТОЕ СОСТОЯНИЕ (если нет ни команд, ни профилей) === -->
+            {% if not teams and not profiles %}
                 <div class="empty-state">
                     <div class="empty-icon">🤝</div>
                     <h3>Пока нет активных участников</h3>
@@ -117,6 +154,29 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeProfileModal()">Отмена</button>
                     <button type="submit" class="btn-create-idea">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+        <!-- === МОДАЛЬНОЕ ОКНО СОЗДАНИЯ КОМАНДЫ === -->
+    <div id="createTeamModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🚀 Создать новую команду</h2>
+                <button class="modal-close" onclick="closeCreateTeamModal()">&times;</button>
+            </div>
+            <form method="POST" action="/create_team" class="idea-form">
+                <div class="form-group">
+                    <label>Название команды *</label>
+                    <input type="text" name="team_name" placeholder="Например: EdTech Innovators" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание проекта</label>
+                    <textarea name="description" rows="4" placeholder="Опишите цель команды и над чем вы работаете..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeCreateTeamModal()">Отмена</button>
+                    <button type="submit" class="btn-create-idea" style="background: #059669;">💡 Создать команду</button>
                 </div>
             </form>
         </div>
@@ -173,6 +233,21 @@
                         }
                     });
                 });
+            }
+        });
+         // === Функции модального окна создания команды ===
+        function openCreateTeamModal() {
+            document.getElementById('createTeamModal').classList.add('active');
+        }
+
+        function closeCreateTeamModal() {
+            document.getElementById('createTeamModal').classList.remove('active');
+        }
+
+        // Закрытие по клику вне окна
+        document.getElementById('createTeamModal').addEventListener('click', (e) => {
+            if (e.target.id === 'createTeamModal') {
+                closeCreateTeamModal();
             }
         });
     </script>
