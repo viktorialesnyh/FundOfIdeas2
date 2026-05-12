@@ -1,11 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import datetime
-from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile, Like, Comment, Team,TeamMember
+from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile, Like, Comment, Team, TeamMember
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_123'
-
 setup_database(app)
 
 with app.app_context():
@@ -30,7 +29,6 @@ def index():
 def login():
     email = request.form.get('email')
     password = request.form.get('password')
-
     user = User.query.filter_by(email=email).first()
 
     if user:
@@ -70,27 +68,83 @@ def register():
 
 
 # === ОСНОВНЫЕ МАРШРУТЫ ===
+
 @app.route('/dashboard')
 def dashboard():
     user = get_current_user()
     if not user:
         return redirect(url_for('index'))
-    return render_template('dashboard.html', username=user.username)
+
+    # 1. Сбор профиля интересов пользователя
+    user_ideas = Idea.query.filter_by(user_id=user.id).all()
+    user_categories = {i.category for i in user_ideas if i.category}
+
+    user_tags = set()
+    for i in user_ideas:
+        if i.tags:
+            user_tags.update(t.strip().lower() for t in i.tags.split(','))
+
+    user_skills = {s.name.lower() for s in Skill.query.filter_by(user_id=user.id).all()}
+
+    # 2. Получение кандидатов: ВСЕ опубликованные идеи
+    candidates = Idea.query.filter(Idea.visibility == 'published').all()
+
+    scored_ideas = []
+    now = datetime.datetime.now()
+
+    for idea in candidates:
+        score = 0
+
+        # А) Совпадение категории (+30)
+        if idea.category in user_categories:
+            score += 30
+
+        # Б) Совпадение тегов (+10 за каждый)
+        idea_tags = set(t.strip().lower() for t in idea.tags.split(',')) if idea.tags else set()
+        score += len(idea_tags & user_tags) * 10
+
+        # В) Совпадение навыков (+5 за каждый)
+        score += len(idea_tags & user_skills) * 5
+
+        # Г) Популярность (лайки) (+2 за лайк)
+        likes_count = Like.query.filter_by(idea_id=idea.id).count()
+        score += likes_count * 2
+
+        # Д) Свежесть (новым идеям бонус, старым штраф)
+        try:
+            idea_date = datetime.datetime.strptime(idea.date, '%d %b %Y')
+            days_old = (now - idea_date).days
+            if days_old < 30:
+                score += (30 - days_old) * 1.5
+        except ValueError:
+            pass
+
+        scored_ideas.append({'idea': idea, 'score': score})
+
+    # 3. Сортировка: Сначала релевантность (score), потом новизна (id)
+    scored_ideas.sort(key=lambda x: (x['score'], x['idea'].id), reverse=True)
+
+    # 4. Берем топ-15
+    recommended_ideas = [item['idea'] for item in scored_ideas[:15]]
+
+    # 5. Получаем ID лайкнутых идей для корректного отображения в ленте
+    liked_ideas = {l.idea_id for l in Like.query.filter_by(user_id=user.id).all()}
+
+    return render_template('dashboard.html', username=user.username, recommended_ideas=recommended_ideas,
+                           liked_ideas=liked_ideas)
 
 
 @app.route('/profile')
 def profile():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     return render_template('profile.html', user=user)
 
 
 @app.route('/ideas')
 def ideas():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     liked_ideas = {l.idea_id for l in Like.query.filter_by(user_id=user.id).all()}
     return render_template('ideas.html', username=user.username, user=user, liked_ideas=liked_ideas)
 
@@ -98,8 +152,7 @@ def ideas():
 @app.route('/diary', methods=['GET', 'POST'])
 def diary():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     if request.method == 'POST':
         text = request.form.get('entry_text')
         tag = request.form.get('tag', 'success')
@@ -111,7 +164,7 @@ def diary():
                 date=datetime.datetime.now().strftime('%d %b, %H:%M')
             ))
             db.session.commit()
-        return redirect(url_for('diary'))
+            return redirect(url_for('diary'))
     entries = DiaryEntry.query.filter_by(user_id=user.id).order_by(DiaryEntry.id.desc()).all()
     return render_template('diary.html', username=user.username, entries=entries)
 
@@ -119,17 +172,11 @@ def diary():
 @app.route('/team')
 def team():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     profiles = TeamProfile.query.filter(TeamProfile.user_id != user.id).all()
     teams = Team.query.filter(Team.status == 'recruiting').all()
-    teams = Team.query.filter(Team.status == 'recruiting').all()
     my_profile = TeamProfile.query.filter_by(user_id=user.id).first()
-    return render_template('team.html',
-                           username=user.username,
-                           profiles=profiles,
-                           teams=teams,
-                           my_profile=my_profile)
+    return render_template('team.html', username=user.username, profiles=profiles, teams=teams, my_profile=my_profile)
 
 
 @app.route('/logout')
@@ -142,8 +189,7 @@ def logout():
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     user.about_me = request.form.get('about_text')
     user.bio = request.form.get('bio_text')
     user.city = request.form.get('city')
@@ -154,10 +200,9 @@ def update_profile():
 @app.route('/add_skill', methods=['POST'])
 def add_skill():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     name = request.form.get('skill_name')
-    icon = request.form.get('skill_icon', '🛠')
+    icon = request.form.get('skill_icon', '')
     level = int(request.form.get('skill_level', 50))
     text = 'Начальный' if level < 50 else 'Средний' if level < 75 else 'Продвинутый' if level < 100 else 'Эксперт'
     db.session.add(Skill(user_id=user.id, name=name, icon=icon, level=level, level_text=text))
@@ -168,8 +213,7 @@ def add_skill():
 @app.route('/delete_skill/<int:skill_id>')
 def delete_skill(skill_id):
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     skill = Skill.query.get(skill_id)
     if skill and skill.user_id == user.id:
         db.session.delete(skill)
@@ -177,80 +221,56 @@ def delete_skill(skill_id):
     return redirect(url_for('profile'))
 
 
-# === МАРШРУТЫ НАСТРОЕК ===
-
-# Смена пароля
+# === НАСТРОЙКИ ===
 @app.route('/settings/change_password', methods=['POST'])
 def change_password():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
+    if not user: return redirect(url_for('index'))
     current_pass = request.form.get('current_password')
     new_pass = request.form.get('new_password')
-
-    if user.password_hash:
-        if not check_password_hash(user.password_hash, current_pass):
-            return redirect(url_for('profile', error='Неверный текущий пароль'))
-
+    if user.password_hash and not check_password_hash(user.password_hash, current_pass):
+        return redirect(url_for('profile', error='Неверный текущий пароль'))
     if new_pass:
         user.set_password(new_pass)
         db.session.commit()
         return redirect(url_for('profile', success='Пароль успешно изменен'))
-
     return redirect(url_for('profile'))
 
 
-# Обновление приватности
 @app.route('/settings/privacy', methods=['POST'])
 def update_privacy():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
-    privacy_fields = [
-        'is_email_visible', 'is_city_visible', 'is_photo_visible',
-        'is_skills_visible', 'is_description_visible',
-        'is_ideas_visible', 'is_team_visible'
-    ]
-
-    for field in privacy_fields:
-        setattr(user, field, request.form.get(field) == 'on')
-
+    if not user: return redirect(url_for('index'))
+    fields = ['is_email_visible', 'is_city_visible', 'is_photo_visible', 'is_skills_visible', 'is_description_visible',
+              'is_ideas_visible', 'is_team_visible']
+    for f in fields:
+        setattr(user, f, request.form.get(f) == 'on')
     db.session.commit()
-    return redirect(url_for('profile', success='Настройки конфиденциальности сохранены'))
+    return redirect(url_for('profile', success='Настройки сохранены'))
 
 
-# Удаление аккаунта
 @app.route('/settings/delete_account', methods=['POST'])
 def delete_account():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
-    confirm_pass = request.form.get('confirm_password')
-
-    if not user.check_password(confirm_pass):
-        return redirect(url_for('profile', error='Неверный пароль. Аккаунт не удален.'))
+    if not user: return redirect(url_for('index'))
+    if not user.check_password(request.form.get('confirm_password')):
+        return redirect(url_for('profile', error='Неверный пароль'))
 
     DiaryEntry.query.filter_by(user_id=user.id).delete()
     Skill.query.filter_by(user_id=user.id).delete()
     TeamProfile.query.filter_by(user_id=user.id).delete()
     Idea.query.filter_by(user_id=user.id).delete()
-
     db.session.delete(user)
     db.session.commit()
-
     session.pop('user_id', None)
     return redirect(url_for('index'))
 
 
-# === МАРШРУТЫ ИДЕЙ ===
+# === ИДЕИ ===
 @app.route('/create_idea', methods=['POST'])
 def create_idea():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     new_idea = Idea(
         user_id=user.id,
         title=request.form.get('title'),
@@ -269,12 +289,9 @@ def create_idea():
 @app.route('/update_idea/<int:idea_id>', methods=['POST'])
 def update_idea(idea_id):
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     idea = Idea.query.get_or_404(idea_id)
-    if idea.user_id != user.id:
-        return redirect(url_for('ideas'))
-
+    if idea.user_id != user.id: return redirect(url_for('ideas'))
     idea.title = request.form.get('title')
     idea.description = request.form.get('description')
     idea.category = request.form.get('category', 'other')
@@ -285,26 +302,21 @@ def update_idea(idea_id):
     return redirect(url_for('ideas'))
 
 
-# === МАРШРУТЫ КОМАНДЫ ===
+# === КОМАНДА ===
 @app.route('/create_team_profile', methods=['POST'])
 def create_team_profile():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     profile = TeamProfile.query.filter_by(user_id=user.id).first()
     data = {
-        'role': request.form.get('role'),
-        'skills': request.form.get('skills', ''),
-        'description': request.form.get('description'),
-        'looking_for': request.form.get('looking_for', 'team'),
+        'role': request.form.get('role'), 'skills': request.form.get('skills', ''),
+        'description': request.form.get('description'), 'looking_for': request.form.get('looking_for', 'team'),
         'date': datetime.datetime.now().strftime('%d %b %Y')
     }
     if profile:
-        for key, value in data.items():
-            setattr(profile, key, value)
+        for k, v in data.items(): setattr(profile, k, v)
     else:
-        new_profile = TeamProfile(user_id=user.id, **data)
-        db.session.add(new_profile)
+        db.session.add(TeamProfile(user_id=user.id, **data))
     db.session.commit()
     return redirect(url_for('team'))
 
@@ -312,41 +324,42 @@ def create_team_profile():
 @app.route('/delete_team_profile')
 def delete_team_profile():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
     profile = TeamProfile.query.filter_by(user_id=user.id).first()
-    if profile:
-        db.session.delete(profile)
-        db.session.commit()
+    if profile: db.session.delete(profile)
+    db.session.commit()
     return redirect(url_for('team'))
 
 
-# === ЛАЙКИ И КОММЕНТАРИИ ===
-
+# === ЛАЙКИ/КОММЕНТАРИИ ===
 @app.route('/like_idea/<int:idea_id>', methods=['POST'])
 def like_idea(idea_id):
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
+    if not user: return redirect(url_for('index'))
 
-    # Проверяем, есть ли уже лайк
     existing = Like.query.filter_by(user_id=user.id, idea_id=idea_id).first()
     if existing:
-        # Если есть — удаляем (дизлайк)
         db.session.delete(existing)
+        is_liked = False
     else:
-        # Если нет — добавляем
         db.session.add(Like(user_id=user.id, idea_id=idea_id))
+        is_liked = True
+
     db.session.commit()
+
+    # Если запрос AJAX, возвращаем JSON
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        new_count = Like.query.filter_by(idea_id=idea_id).count()
+        return jsonify({'likes': new_count, 'is_liked': is_liked})
+
+    # Иначе редирект (для обратной совместимости со страницей /ideas)
     return redirect(url_for('ideas'))
 
 
 @app.route('/add_comment/<int:idea_id>', methods=['POST'])
 def add_comment(idea_id):
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
+    if not user: return redirect(url_for('index'))
     text = request.form.get('comment_text')
     if text:
         db.session.add(Comment(user_id=user.id, idea_id=idea_id, text=text))
@@ -354,87 +367,50 @@ def add_comment(idea_id):
     return redirect(url_for('ideas'))
 
 
-# === МАРШРУТЫ КОМАНД ===
-
 @app.route('/create_team', methods=['POST'])
 def create_team():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
+    if not user: return redirect(url_for('index'))
     name = request.form.get('team_name')
     description = request.form.get('description')
-
     if name:
-        new_team = Team(
-            name=name,
-            description=description,
-            leader_id=user.id,
-            status='recruiting',
-            date=datetime.datetime.now().strftime('%d %b %Y')
-        )
+        new_team = Team(name=name, description=description, leader_id=user.id, status='recruiting',
+                        date=datetime.datetime.now().strftime('%d %b %Y'))
         db.session.add(new_team)
+        db.session.add(TeamMember(team_id=new_team.id, user_id=user.id, role='Лидер',
+                                  joined_date=datetime.datetime.now().strftime('%d %b %Y')))
         db.session.commit()
-        # Добавляем создателя как первого участника
-        db.session.add(TeamMember(
-            team_id=new_team.id,
-            user_id=user.id,
-            role='Лидер',
-            joined_date=datetime.datetime.now().strftime('%d %b %Y')
-        ))
-        db.session.commit()
-
     return redirect(url_for('team'))
 
 
 @app.route('/team_members/<int:team_id>')
 def team_members(team_id):
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
+    if not user: return redirect(url_for('index'))
     team = Team.query.get_or_404(team_id)
     members = TeamMember.query.filter_by(team_id=team_id).all()
-    return render_template('team_members.html',
-                           team=team,
-                           members=members,
-                           username=user.username)
+    return render_template('team_members.html', team=team, members=members, username=user.username)
 
 
 @app.route('/join_team/<int:team_id>', methods=['POST'])
 def join_team(team_id):
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
-    # Проверяем, не состоит ли уже пользователь в этой команде
+    if not user: return redirect(url_for('index'))
     existing = TeamMember.query.filter_by(team_id=team_id, user_id=user.id).first()
     if not existing:
-        db.session.add(TeamMember(
-            team_id=team_id,
-            user_id=user.id,
-            role='Участник',
-            joined_date=datetime.datetime.now().strftime('%d %b %Y')
-        ))
+        db.session.add(TeamMember(team_id=team_id, user_id=user.id, role='Участник',
+                                  joined_date=datetime.datetime.now().strftime('%d %b %Y')))
         db.session.commit()
-
     return redirect(url_for('team'))
 
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
     user = get_current_user()
-    if not user:
-        return redirect(url_for('index'))
-
-    recipient_id = request.form.get('recipient_id')
-    subject = request.form.get('subject')
-    message_text = request.form.get('message_text')
-
-    # Здесь можно добавить сохранение сообщения в БД
-    # Пока просто перенаправляем с сообщением об успехе
+    if not user: return redirect(url_for('index'))
     flash('Сообщение отправлено!', 'success')
     return redirect(url_for('team'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

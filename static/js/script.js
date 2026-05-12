@@ -23,7 +23,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabSettings = document.getElementById('tab-settings');
     const contentProfile = document.getElementById('content-profile');
     const contentSettings = document.getElementById('content-settings');
-
     if (tabProfile && tabSettings) {
         tabProfile.addEventListener('click', () => {
             tabProfile.classList.add('active');
@@ -52,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const filterBtns = document.querySelectorAll('.filter-btn');
     const searchInput = document.getElementById('searchInput');
     const cards = document.querySelectorAll('.idea-card');
-
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -96,7 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const teamSearch = document.getElementById('teamSearch');
     const teamCards = document.querySelectorAll('.team-card');
     const filterBtns = document.querySelectorAll('.filter-btn');
-
     if (teamSearch) {
         teamSearch.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
@@ -133,9 +130,9 @@ document.addEventListener('click', (e) => {
     if (e.target.classList.contains('modal')) closeModal();
 });
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeModal(); });
-
 function openViewModal(card) { /* Логика просмотра */ }
 function openEditModal(card) { /* Логика редактирования */ }
+
 // === МОДАЛЬНОЕ ОКНО: ПРОСМОТР ИДЕИ ===
 function openViewModal(card) {
     // Получаем данные из data-атрибутов карточки
@@ -229,10 +226,9 @@ function closeAnyModal(modalId) {
         modal.classList.remove('active');
     }
 }
+
 // === ЛОГИКА МОДАЛЬНОГО ОКНА КОММЕНТАРИЕВ ===
-
 let currentIdeaIdForComments = null;
-
 function openCommentsModal(ideaId) {
     currentIdeaIdForComments = ideaId;
     // Устанавливаем ссылку формы на правильный маршрут
@@ -264,3 +260,38 @@ document.addEventListener('click', (e) => {
         closeCommentsModal();
     }
 });
+
+// === ЛОГИКА ЛАЙКОВ В ЛЕНТЕ (AJAX) ===
+function toggleLike(btn) {
+    const ideaId = btn.dataset.id;
+    const isLiked = btn.dataset.liked === 'true';
+
+    // Отправляем запрос на сервер
+    fetch(`/like_idea/${ideaId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Обновляем UI
+        btn.dataset.liked = data.is_liked;
+        btn.querySelector('.like-count').textContent = data.likes;
+
+        const icon = btn.querySelector('.like-icon');
+        if (data.is_liked) {
+            icon.textContent = '❤️';
+            btn.classList.add('liked');
+        } else {
+            icon.textContent = '🤍';
+            btn.classList.remove('liked');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // В случае ошибки можно перенаправить на страницу входа или просто ничего не делать
+        window.location.href = '/';
+    });
+}
