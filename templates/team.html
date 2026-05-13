@@ -32,7 +32,7 @@
                 {% else %}
                     <button class="btn-create" onclick="openCreateProfileModal()">+ Профиль участника</button>
                 {% endif %}
-                <button class="btn-create" style="background: #059669;" onclick="openCreateTeamModal()">+ Создать команду</button>
+                <button class="btn-create" style="background: #C4B49A;" onclick="openCreateTeamModal()">+ Создать команду</button>
             </div>
         </div>
 
@@ -53,26 +53,26 @@
             <!-- === 1. КАРТОЧКИ КОМАНД === -->
             {% if teams %}
                 {% for t in teams %}
-                <!-- ДОБАВЛЕНО: data-type="team" -->
-                <div class="team-card" data-type="team" style="border-left: 4px solid #059669;">
+                <div class="team-card"
+                     data-type="team"
+                     data-id="{{ t.id }}"
+                     data-name="{{ t.name }}"
+                     data-desc="{{ t.description or '' }}"
+                     data-leader="{{ t.leader.username }}"
+                     data-count="{{ t.members|length }}"
+                     data-leader-id="{{ t.leader_id }}"
+                     style="border-left: 4px solid #C4B49A; cursor: pointer;">
+
                     <div class="card-header-team">
-                        <span class="badge" style="background: #059669; color: white;">🚀 Команда</span>
+                        <span class="badge" style="background: #C4B49A; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">🚀 Команда</span>
                         <span class="date">{{ t.date }}</span>
                     </div>
                     <h3>{{ t.name }}</h3>
-                    <p class="desc">{{ t.description[:150] }}{% if t.description|length > 150 %}...{% endif %}</p>
+                    <p class="desc">{{ (t.description or '')[:150] }}{% if t.description and t.description|length > 150 %}...{% endif %}</p>
 
-                    <div class="card-tags">
-                        <span>Лидер: {{ t.leader.username }}</span>
-                        <span>Участников: {{ t.members|length }}</span>
-                    </div>
-
-                    <div class="card-actions">
-                        <button class="action-btn outline" onclick="openMessageModal({{ t.leader_id }}, 'Команда {{ t.name }}')">✉️ Написать</button>
-                        <a href="/team_members/{{ t.id }}" class="action-btn outline" style="text-decoration: none; display: inline-flex; align-items: center;">️ Участники</a>
-                        <form action="/join_team/{{ t.id }}" method="POST" style="display: inline;">
-                            <button type="submit" class="action-btn" style="background: #059669;">🤝 Вступить</button>
-                        </form>
+                    <div class="card-tags" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 10px;">
+                        <span style="color: #4b5563; font-size: 0.9rem;">👤 Лидер: {{ t.leader.username }}</span>
+                        <span style="color: #4b5563; font-size: 0.9rem;">👥 Участников: {{ t.members|length }}</span>
                     </div>
                 </div>
                 {% endfor %}
@@ -81,7 +81,6 @@
             <!-- === 2. ПРОФИЛИ УЧАСТНИКОВ === -->
             {% if profiles %}
                 {% for p in profiles %}
-                <!-- ДОБАВЛЕНО: data-type="members" -->
                 <div class="team-card"
                      data-type="members"
                      data-looking="{{ p.looking_for }}"
@@ -94,7 +93,7 @@
                         <span class="date">{{ p.date }}</span>
                     </div>
                     <h3>{{ p.role }}</h3>
-                    <p class="desc">{{ p.description[:150] }}{% if p.description|length > 150 %}...{% endif %}</p>
+                    <p class="desc">{{ (p.description or '')[:150] }}{% if p.description and p.description|length > 150 %}...{% endif %}</p>
 
                     <div class="card-tags">
                         {% if p.skills %}
@@ -124,6 +123,37 @@
         </div>
     </main>
 
+    <!-- === МОДАЛЬНОЕ ОКНО: ИНФОРМАЦИЯ О КОМАНДЕ (БЕЗ КНОПКИ "НАПИСАТЬ") === -->
+    <div id="teamInfoModal" class="modal">
+        <div class="modal-content" style="max-width: 800px; width: 90%;">
+            <div class="modal-header">
+                <h2 id="modalTeamName">Название команды</h2>
+                <button class="modal-close" onclick="closeTeamInfoModal()">&times;</button>
+            </div>
+            <div style="padding: 32px;">
+                <p id="modalTeamDesc" style="white-space: pre-wrap; margin-bottom: 28px; line-height: 1.7; color: #374151; font-size: 1.05rem;"></p>
+                <div style="background: #f9fafb; padding: 20px 24px; border-radius: 12px; margin-bottom: 28px; display: flex; gap: 30px; flex-wrap: wrap;">
+                    <div>
+                        <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Лидер</p>
+                        <p style="margin: 0; font-weight: 600; font-size: 1.1rem; color: #111827;" id="modalTeamLeader">—</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">Участников</p>
+                        <p style="margin: 0; font-weight: 600; font-size: 1.1rem; color: #111827;" id="modalTeamCount">0</p>
+                    </div>
+                </div>
+
+                <!-- КНОПКИ ДЕЙСТВИЙ (УБРАНА КНОПКА "НАПИСАТЬ") -->
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <a id="linkMembersTeam" href="#" class="action-btn outline" style="flex: 1; min-width: 180px; padding: 12px; text-decoration: none; display: inline-flex; justify-content: center;">👁️ Участники</a>
+                    <form id="formJoinTeam" method="POST" style="flex: 1; min-width: 180px;">
+                        <button type="submit" class="action-btn" style="background: #C4B49A; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.1); width: 100%; padding: 12px;">🤝 Вступить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Модальное окно ПРОФИЛЯ -->
     <div id="profileModal" class="modal">
         <div class="modal-content">
@@ -139,7 +169,7 @@
                 <div class="form-group">
                     <label>Что вы ищете?</label>
                     <select name="looking_for">
-                        <option value="team" {{ 'selected' if my_profile and my_profile.looking_for == 'team' }}> Команду для своего проекта</option>
+                        <option value="team" {{ 'selected' if my_profile and my_profile.looking_for == 'team' }}>👥 Команду для своего проекта</option>
                         <option value="members" {{ 'selected' if my_profile and my_profile.looking_for == 'members' }}>🚀 Участников в свой проект</option>
                     </select>
                 </div>
@@ -153,7 +183,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeProfileModal()">Отмена</button>
-                    <button type="submit" class="btn-create-idea"> Сохранить</button>
+                    <button type="submit" class="btn-create-idea">💾 Сохранить</button>
                 </div>
             </form>
         </div>
@@ -177,7 +207,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeCreateTeamModal()">Отмена</button>
-                    <button type="submit" class="btn-create-idea" style="background: #059669;">💡 Создать команду</button>
+                    <button type="submit" class="btn-create-idea" style="background: #C4B49A; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">💡 Создать команду</button>
                 </div>
             </form>
         </div>
@@ -185,7 +215,6 @@
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script>
-        // Логика модального окна профиля
         function openCreateProfileModal() {
             document.getElementById('modalTitle').textContent = 'Создать профиль';
             document.getElementById('profileModal').classList.add('active');
@@ -194,69 +223,64 @@
             document.getElementById('modalTitle').textContent = 'Редактировать профиль';
             document.getElementById('profileModal').classList.add('active');
         }
-        function closeProfileModal() {
-            document.getElementById('profileModal').classList.remove('active');
+        function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
+        function openCreateTeamModal() { document.getElementById('createTeamModal').classList.add('active'); }
+        function closeCreateTeamModal() { document.getElementById('createTeamModal').classList.remove('active'); }
+
+        function openTeamInfoModal(id, name, desc, leader, count, leaderId) {
+            document.getElementById('modalTeamName').textContent = name;
+            document.getElementById('modalTeamDesc').textContent = desc || "Описание отсутствует";
+            document.getElementById('modalTeamLeader').textContent = leader;
+            document.getElementById('modalTeamCount').textContent = count;
+
+            // Кнопка "Участники"
+            document.getElementById('linkMembersTeam').href = `/team_members/${id}`;
+            // Форма "Вступить"
+            document.getElementById('formJoinTeam').action = `/join_team/${id}`;
+
+            document.getElementById('teamInfoModal').classList.add('active');
         }
+        function closeTeamInfoModal() { document.getElementById('teamInfoModal').classList.remove('active'); }
 
-        // Фильтрация и поиск
         document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('.team-card[data-type="team"]').forEach(card => {
+                card.addEventListener('click', () => {
+                    openTeamInfoModal(card.dataset.id, card.dataset.name, card.dataset.desc, card.dataset.leader, card.dataset.count, card.dataset.leaderId);
+                });
+            });
+
             const filterBtns = document.querySelectorAll('.filter-btn');
-            const searchInput = document.getElementById('teamSearch');
             const cards = document.querySelectorAll('.team-card');
-
-            // === ЛОГИКА ФИЛЬТРА (ИСПРАВЛЕНО) ===
-            if (filterBtns.length > 0) {
-                filterBtns.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        filterBtns.forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-
-                        const filter = btn.dataset.filter; // "team" или "members"
-
-                        cards.forEach(card => {
-                            const type = card.dataset.type; // "team" или "members"
-
-                            if (filter === 'all' || type === filter) {
-                                card.classList.remove('hidden');
-                            } else {
-                                card.classList.add('hidden');
-                            }
-                        });
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const filter = btn.dataset.filter;
+                    cards.forEach(card => {
+                        const type = card.dataset.type;
+                        if (filter === 'all' || type === filter) card.classList.remove('hidden');
+                        else card.classList.add('hidden');
                     });
                 });
-            }
+            });
 
-            // === ЛОГИКА ПОИСКА (ИСПРАВЛЕНО) ===
+            const searchInput = document.getElementById('teamSearch');
             if (searchInput) {
                 searchInput.addEventListener('input', (e) => {
                     const term = e.target.value.toLowerCase();
                     cards.forEach(card => {
-                        // Защита от ошибки, если у карточки нет role (у команд его нет)
                         const role = card.dataset.role || '';
                         const skills = card.dataset.skills || '';
-
-                        // Ищем и в командах (по названию) и в участниках (по роли/навыкам)
                         const cardName = card.querySelector('h3') ? card.querySelector('h3').textContent.toLowerCase() : '';
-
-                        if (role.includes(term) || skills.includes(term) || cardName.includes(term)) {
-                            card.classList.remove('hidden');
-                        } else {
-                            card.classList.add('hidden');
-                        }
+                        if (role.includes(term) || skills.includes(term) || cardName.includes(term)) card.classList.remove('hidden');
+                        else card.classList.add('hidden');
                     });
                 });
             }
         });
 
-        // Модальное окно команды
-        function openCreateTeamModal() {
-            document.getElementById('createTeamModal').classList.add('active');
-        }
-        function closeCreateTeamModal() {
-            document.getElementById('createTeamModal').classList.remove('active');
-        }
-        document.getElementById('createTeamModal').addEventListener('click', (e) => {
-            if (e.target.id === 'createTeamModal') closeCreateTeamModal();
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) e.target.classList.remove('active');
         });
     </script>
 </body>

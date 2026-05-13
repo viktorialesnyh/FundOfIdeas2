@@ -111,3 +111,4 @@ class TeamMember(db.Model):
     joined_date = db.Column(db.String(50))
     # Связи
     user = db.relationship('User', backref='team_memberships', lazy=True)
+
