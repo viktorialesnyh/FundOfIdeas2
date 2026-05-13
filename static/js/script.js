@@ -264,3 +264,11 @@ document.addEventListener('click', (e) => {
         closeCommentsModal();
     }
 });
+// === АВТО-ПЕРЕКЛЮЧЕНИЕ ВКЛАДКИ ПРИ ОШИБКАХ ===
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    // Если в адресе есть ?tab=register, переключаемся на регистрацию
+    if (params.get('tab') === 'register') {
+        switchTab('register');
+    }
+});

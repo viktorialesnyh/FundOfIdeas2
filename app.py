@@ -51,23 +51,40 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
-    username = request.form.get('username', 'User')
-    email = request.form.get('email', 'user@test.com')
+    # 1. Сбор данных
+    email = request.form.get('email', '').strip().lower()
+    username = request.form.get('username', '').strip()
     password = request.form.get('password')
+    confirm_password = request.form.get('confirm_password')
 
+    # 2. ПРОВЕРКА ПАРОЛЕЙ (Новый баг)
+    if password != confirm_password:
+        flash('Пароли не совпадают!', 'error')
+        # tab='register' оставляет нас на той же вкладке
+        return redirect(url_for('index', tab='register'))
+
+    # 3. ПРОВЕРКА СУЩЕСТВОВАНИЯ EMAIL (Старый баг)
     if User.query.filter_by(email=email).first():
-        flash('Email уже занят', 'error')
-        return redirect(url_for('index'))
+        flash('Аккаунт с таким email уже существует. Попробуйте войти.', 'error')
+        # Тоже оставляем на вкладке регистрации, чтобы пользователь видел ошибку
+        return redirect(url_for('index', tab='register'))
+
+    # 4. Создание пользователя (если всё ок)
+    if not username:
+        username = "User"
 
     new_user = User(username=username, email=email)
-    if password:
-        new_user.set_password(password)
+    new_user.set_password(password)
 
-    db.session.add(new_user)
-    db.session.commit()
-    session['user_id'] = new_user.id
-    return redirect(url_for('dashboard'))
-
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+        session['user_id'] = new_user.id
+        return redirect(url_for('dashboard'))
+    except Exception:
+        db.session.rollback()
+        flash('Ошибка регистрации. Попробуйте позже.', 'error')
+        return redirect(url_for('index', tab='register'))
 
 # === ОСНОВНЫЕ МАРШРУТЫ ===
 @app.route('/dashboard')
