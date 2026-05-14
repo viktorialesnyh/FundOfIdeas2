@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import datetime
+import os
 from data import db, setup_database, User, Idea, DiaryEntry, Skill, TeamProfile, Like, Comment, Team, TeamMember
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import or_
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_123'
+app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_123')
 setup_database(app)
 
 with app.app_context():
@@ -431,4 +432,5 @@ def send_message():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
