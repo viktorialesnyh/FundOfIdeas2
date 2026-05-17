@@ -108,15 +108,19 @@
             <!-- Лидер видит кнопку удаления (обёрнута в форму для отправки POST) -->
             <form action="{{ url_for('delete_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;"
                   onsubmit="return confirm('Вы уверены? Команда и все данные будут удалены безвозвратно.')">
+
+            <form action="{{ url_for('delete_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;"
+                  onsubmit="return confirm('Вы уверены, что хотите удалить команду? Это действие необратимо.')">
                 <button type="submit" class="action-btn" style="background: #ef4444; color: white; width: 100%; padding: 12px;">
                     🗑️ Удалить команду
                 </button>
+            </form>
             </form>
             {% else %}
             <!-- Не-лидер видит кнопку вступления -->
             <form action="{{ url_for('join_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;">
                 <button type="submit" class="action-btn" style="background: #C4B49A; color: white; width: 100%; padding: 12px;">
-                    🤝 Присоединиться к команде
+                     Присоединиться к команде
                 </button>
             </form>
             {% endif %}

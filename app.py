@@ -457,20 +457,30 @@ def join_team(team_id):
     return redirect(url_for('team_members', team_id=team_id))
 
 
+
+
 @app.route('/delete_team/<int:team_id>', methods=['POST'])
 def delete_team(team_id):
     user = get_current_user()
-    if not user: return redirect(url_for('index'))
+    if not user:
+        return redirect(url_for('index'))
+
     team = Team.query.get_or_404(team_id)
+
+    # Проверяем, что пользователь - лидер команды
     if team.leader_id != user.id:
-        flash('Только лидер может удалить команду', 'error')
+        flash('Только лидер команды может её удалить', 'error')
         return redirect(url_for('team_members', team_id=team_id))
+
+    # Удаляем всех участников
     TeamMember.query.filter_by(team_id=team_id).delete()
+
+    # Удаляем команду
     db.session.delete(team)
     db.session.commit()
-    flash(f'Команда "{team.name}" удалена', 'success')
-    return redirect(url_for('team'))
 
+    flash(f'Команда "{team.name}" успешно удалена', 'success')
+    return redirect(url_for('team'))
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
