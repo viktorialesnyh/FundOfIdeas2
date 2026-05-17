@@ -25,6 +25,22 @@
     </nav>
 
     <main class="team-main" style="max-width: 900px;">
+
+        <!-- === БЛОК УВЕДОМЛЕНИЙ === -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+            <div style="padding: 14px 18px; border-radius: 8px; margin-bottom: 24px; color: white; font-weight: 500; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px;
+                  {% if category == 'success' %}background-color: #10b981; border-left: 5px solid #059669;{% elif category == 'error' %}background-color: #ef4444; border-left: 5px solid #b91c1c;{% else %}background-color: #3b82f6;{% endif %}">
+                {% if category == 'success' %}✅{% elif category == 'error' %}⚠️{% else %}ℹ️{% endif %}
+                {{ message }}
+            </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <!-- ======================================= -->
+
+        <!-- Заголовок команды -->
         <div style="margin-bottom: 40px;">
             <a href="{{ url_for('team') }}" style="color: #6b7280; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 0.95rem;">
                 ← Назад к командам
@@ -41,6 +57,7 @@
             </div>
         </div>
 
+        <!-- Список участников -->
         <div style="margin-bottom: 30px;">
             <h2 style="font-size: 1.4rem; margin-bottom: 20px; color: #111827; padding-bottom: 12px; border-bottom: 2px solid #e5e7eb;">
                 👥 Участники команды ({{ members|length }})
@@ -52,7 +69,7 @@
                     <div class="team-card" style="border-left: 4px solid #C4B49A;">
                         <div class="card-header-team">
                             <span class="badge" style="background: #C4B49A; color: white;">
-                                {{ '👑 Лидер' if member.role == 'Лидер' else ' Участник' }}
+                                {{ '👑 Лидер' if member.role == 'Лидер' else '👤 Участник' }}
                             </span>
                             <span class="date">{{ member.joined_date }}</span>
                         </div>
@@ -98,29 +115,25 @@
             {% endif %}
         </div>
 
-        <!-- КНОПКИ ДЕЙСТВИЙ (ИСПРАВЛЕНО) -->
+        <!-- Кнопки действий -->
         <div style="display: flex; gap: 12px; flex-wrap: wrap; padding-top: 24px; border-top: 2px solid #e5e7eb;">
             <a href="{{ url_for('team') }}" class="action-btn outline" style="flex: 1; min-width: 180px; padding: 12px; text-decoration: none; display: inline-flex; justify-content: center;">
                 ← Назад к списку
             </a>
 
             {% if team.leader_id == user.id %}
-            <!-- Лидер видит кнопку удаления (обёрнута в форму для отправки POST) -->
+            <!-- Лидер видит кнопку удаления -->
             <form action="{{ url_for('delete_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;"
                   onsubmit="return confirm('Вы уверены? Команда и все данные будут удалены безвозвратно.')">
-
-            <form action="{{ url_for('delete_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;"
-                  onsubmit="return confirm('Вы уверены, что хотите удалить команду? Это действие необратимо.')">
                 <button type="submit" class="action-btn" style="background: #ef4444; color: white; width: 100%; padding: 12px;">
                     🗑️ Удалить команду
                 </button>
-            </form>
             </form>
             {% else %}
             <!-- Не-лидер видит кнопку вступления -->
             <form action="{{ url_for('join_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;">
                 <button type="submit" class="action-btn" style="background: #C4B49A; color: white; width: 100%; padding: 12px;">
-                     Присоединиться к команде
+                    🤝 Присоединиться к команде
                 </button>
             </form>
             {% endif %}

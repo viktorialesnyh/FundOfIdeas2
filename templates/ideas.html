@@ -93,10 +93,10 @@
                     </div>
 
                     <div class="card-actions">
-                        <button class="action-btn" onclick="openViewModal(this.closest('.idea-card'))">🔍 Открыть</button>
-                        <button class="action-btn outline" onclick="openEditModal(this.closest('.idea-card'))">✏️ Редактировать</button>
-                        <!-- Обновленная кнопка комментариев -->
-                        <button class="action-btn outline" onclick="openIdeaCommentModal({{ idea.id }})">💬 Комментарии ({{ idea.comments|length }})</button>
+                        <button class="action-btn" onclick="openViewModal(this.closest('.idea-card'))">🔍 </button>
+                        <button class="action-btn outline" onclick="openEditModal(this.closest('.idea-card'))">✏️</button>
+                        <!-- Исправленная кнопка комментариев (компактная) -->
+                        <button class="action-btn outline" onclick="openIdeaCommentModal({{ idea.id }})" title="Комментарии">💬 {{ idea.comments|length }}</button>
                     </div>
                 </div>
 
@@ -140,6 +140,7 @@
                 </div>
             {% endif %}
         </div>
+
         <!-- === МОДАЛЬНОЕ ОКНО СОЗДАНИЯ === -->
         <div id="createIdeaModal" class="modal">
             <div class="modal-content">
@@ -186,7 +187,7 @@
                             <option value="public_domain">🌍 Public Domain</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Теги (через запятую)</label>
                         <input type="text" name="tags" placeholder="Python, AI, Mobile">
@@ -198,27 +199,28 @@
                 </form>
             </div>
         </div>
-            <!-- === МОДАЛЬНОЕ ОКНО ПРОСМОТРА === -->
-    <div id="viewIdeaModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="viewTitle">Название идеи</h2>
-                <button class="modal-close" onclick="closeAnyModal('viewIdeaModal')">&times;</button>
-            </div>
-            <div class="idea-form">
-                <p id="viewDate" style="color: #6b7280; margin-bottom: 10px; font-size: 0.9rem;"></p>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <span id="viewCategory" class="badge" style="background:#e5e7eb; color:#374151;"></span>
-                    <span id="viewVisibility" class="badge"></span>
+
+        <!-- === МОДАЛЬНОЕ ОКНО ПРОСМОТРА === -->
+        <div id="viewIdeaModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="viewTitle">Название идеи</h2>
+                    <button class="modal-close" onclick="closeAnyModal('viewIdeaModal')">&times;</button>
                 </div>
-                <p id="viewDesc" style="margin: 15px 0; white-space: pre-wrap; line-height: 1.6;"></p>
-                <div id="viewTags" class="card-tags" style="margin-bottom: 15px;"></div>
-                <p id="viewLicense" style="color: #6b7280; font-size: 0.9rem; border-top: 1px solid #e5e7eb; padding-top: 10px;"></p>
+                <div class="idea-form">
+                    <p id="viewDate" style="color: #6b7280; margin-bottom: 10px; font-size: 0.9rem;"></p>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <span id="viewCategory" class="badge" style="background:#e5e7eb; color:#374151;"></span>
+                        <span id="viewVisibility" class="badge"></span>
+                    </div>
+                    <p id="viewDesc" style="margin: 15px 0; white-space: pre-wrap; line-height: 1.6;"></p>
+                    <div id="viewTags" class="card-tags" style="margin-bottom: 15px;"></div>
+                    <p id="viewLicense" style="color: #6b7280; font-size: 0.9rem; border-top: 1px solid #e5e7eb; padding-top: 10px;"></p>
+                </div>
             </div>
         </div>
-    </div>
 
-     <!-- === МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ === -->
+        <!-- === МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ === -->
         <div id="editIdeaModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -253,7 +255,6 @@
                             </select>
                         </div>
                     </div>
-
                     <div class="form-group">
                         <label>Лицензия</label>
                         <select id="editLicense" name="license">
@@ -277,7 +278,8 @@
             </div>
         </div>
     </main>
-        <script>
+
+    <script>
         // Функции для комментариев идей
         function openIdeaCommentModal(id) {
             document.getElementById('ideaCommentModal_' + id).classList.add('active');
