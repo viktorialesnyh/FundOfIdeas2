@@ -410,7 +410,7 @@ def create_team():
     description = request.form.get('description')
     if name:
         new_team = Team(name=name, description=description, leader_id=user.id, status='recruiting',
-                        date=datetime.datetime.now().strftime('%d %b %Y, %H:%M'))  # <--- ИСПРАВЛЕНО: добавлена скобка )
+                        date=datetime.datetime.now().strftime('%d %b %Y, %H:%M'))
         db.session.add(new_team)
         db.session.add(TeamMember(team_id=new_team.id, user_id=user.id, role='Лидер',
                                   joined_date=datetime.datetime.now().strftime('%d %b %Y')))
@@ -457,8 +457,6 @@ def join_team(team_id):
     return redirect(url_for('team_members', team_id=team_id))
 
 
-
-
 @app.route('/delete_team/<int:team_id>', methods=['POST'])
 def delete_team(team_id):
     user = get_current_user()
@@ -489,6 +487,38 @@ def send_message():
     flash('Сообщение отправлено!', 'success')
     return redirect(url_for('team'))
 
+
+@app.route('/update_diary/<int:entry_id>', methods=['POST'])
+def update_diary(entry_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    entry = DiaryEntry.query.get_or_404(entry_id)
+    if entry.user_id != user.id:
+        return jsonify({'error': 'Forbidden'}), 403
+
+    entry.text = request.form.get('entry_text')
+    entry.tag = request.form.get('tag', 'success')
+    db.session.commit()
+
+    return jsonify({'status': 'success'})
+
+
+@app.route('/delete_diary/<int:entry_id>', methods=['POST'])
+def delete_diary(entry_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    entry = DiaryEntry.query.get_or_404(entry_id)
+    if entry.user_id != user.id:
+        return jsonify({'error': 'Forbidden'}), 403
+
+    db.session.delete(entry)
+    db.session.commit()
+
+    return jsonify({'status': 'success'})
 
 if __name__ == '__main__':
     app.run(debug=True)

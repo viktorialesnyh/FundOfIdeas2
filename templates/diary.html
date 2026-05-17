@@ -23,11 +23,20 @@
         </div>
     </nav>
 
-    <main class="diary-main">
-        <div class="diary-header">
-            <h1>Дневник прогресса</h1>
-            <button class="btn-add" id="toggleFormBtn">+ Запись</button>
+    <main class="diary-main" style="max-width: 800px; margin: 0 auto; padding: 40px 20px;">
+        <div class="diary-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h1 style="font-size: 1.5rem; color: #111827;">📖 Дневник прогресса</h1>
+            <button class="btn-add" id="toggleFormBtn" style="padding: 8px 16px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer;">+ Запись</button>
         </div>
+
+        <!-- === НАЧАЛО: ДОБАВЛЕН БЛОК ФИЛЬТРОВ === -->
+        <div class="diary-filters" style="margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 8px;">
+            <button class="filter-btn active" data-filter="all">Все</button>
+            <button class="filter-btn" data-filter="success">🟢 Успех</button>
+            <button class="filter-btn" data-filter="plan">🔵 Планы</button>
+            <button class="filter-btn" data-filter="issue">🔴 Проблема</button>
+        </div>
+        <!-- === КОНЕЦ: ДОБАВЛЕН БЛОК ФИЛЬТРОВ === -->
 
         <!-- Форма добавления -->
         <div class="entry-form-container hidden" id="entryFormContainer">
@@ -48,18 +57,18 @@
         <div class="timeline" id="timeline">
             {% if entries %}
                 {% for entry in entries %}
-                <div class="timeline-item">
-                    <div class="timeline-date">{{ entry.date }}</div>
+                <div class="timeline-item" data-tag="{{ entry.tag }}">
+                    <div class="timeline-date" style="font-size: 0.85rem; color: #6b7280; margin-bottom: 8px;">{{ entry.date }}</div>
                     <div class="timeline-content">
-                        <span class="tag tag-{{ entry.tag }}">
+                        <span class="tag-badge tag-{{ entry.tag }}">
                             {% if entry.tag == 'success' %}🟢 Успех
                             {% elif entry.tag == 'plan' %}🔵 Планы
                             {% else %}🔴 Проблема{% endif %}
                         </span>
-                        <p>{{ entry.text }}</p>
+                        <p style="white-space: pre-wrap; line-height: 1.6; color: #1f2937; margin: 8px 0;">{{ entry.text }}</p>
                         <div class="item-actions">
-                            <button class="action-btn-small">Редактировать</button>
-                            <button class="action-btn-small delete">Удалить</button>
+                            <button class="action-btn-small" onclick="openEditModal({{ entry.id }}, '{{ entry.text | replace("'", "\\'") }}', '{{ entry.tag }}')">✏️ Редактировать</button>
+                            <button class="action-btn-small delete" onclick="deleteEntry({{ entry.id }})">🗑️ Удалить</button>
                         </div>
                     </div>
                 </div>
@@ -75,6 +84,126 @@
         </div>
     </main>
 
+    <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Редактировать запись</h2>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm" onsubmit="saveEdit(event)">
+                <input type="hidden" id="editId">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 500;">Категория</label>
+                    <select id="editTag" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="success">🟢 Успех</option>
+                        <option value="plan">🔵 Планы</option>
+                        <option value="issue">🔴 Проблема</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 500;">Текст</label>
+                    <textarea id="editText" rows="4" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Отмена</button>
+                    <button type="submit" class="btn-create">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <!-- === НАЧАЛО: СКРИПТЫ === -->
+    <script>
+        // Показ/скрытие формы добавления
+        document.getElementById('toggleFormBtn')?.addEventListener('click', () => {
+            document.getElementById('entryFormContainer').classList.toggle('hidden');
+        });
+
+        // Фильтрация
+        document.addEventListener("DOMContentLoaded", () => {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const items = document.querySelectorAll('.timeline-item');
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const filter = btn.dataset.filter;
+                    items.forEach(item => {
+                        const itemTag = item.dataset.tag;
+                        item.style.display = (filter === 'all' || itemTag === filter) ? 'block' : 'none';
+                    });
+                });
+            });
+        });
+
+        // Редактирование
+        function openEditModal(id, text, tag) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editText').value = text;
+            document.getElementById('editTag').value = tag;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        async function saveEdit(e) {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const text = document.getElementById('editText').value;
+            const tag = document.getElementById('editTag').value;
+
+            const formData = new FormData();
+            formData.append('entry_text', text);
+            formData.append('tag', tag);
+
+            try {
+                const res = await fetch(`/update_diary/${id}`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    alert('Ошибка обновления');
+                }
+            } catch (err) {
+                alert('Ошибка обновления');
+            }
+        }
+
+        // Удаление
+        async function deleteEntry(id) {
+            if (!confirm('Удалить эту запись?')) return;
+
+            try {
+                const res = await fetch(`/delete_diary/${id}`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    alert('Ошибка удаления');
+                }
+            } catch (err) {
+                alert('Ошибка удаления');
+            }
+        }
+
+        // Закрытие модалки по клику вне
+        document.getElementById('editModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') closeEditModal();
+        });
+    </script>
+    <!-- === КОНЕЦ: СКРИПТЫ === -->
 </body>
 </html>
