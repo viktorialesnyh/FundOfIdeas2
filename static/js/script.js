@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 btn.classList.add('active');
                 const filter = btn.dataset.filter;
                 cards.forEach(card => {
-                    if (filter === 'all' || card.dataset.status === filter) card.classList.remove('hidden');
+                    if (filter === 'all' || card.dataset.visibility === filter) card.classList.remove('hidden');
                     else card.classList.add('hidden');
                 });
             });

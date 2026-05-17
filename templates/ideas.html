@@ -95,19 +95,52 @@
                     <div class="card-actions">
                         <button class="action-btn" onclick="openViewModal(this.closest('.idea-card'))">🔍 Открыть</button>
                         <button class="action-btn outline" onclick="openEditModal(this.closest('.idea-card'))">✏️ Редактировать</button>
-                        <button class="action-btn outline" onclick="openCommentsModal({{ idea.id }})">💬 Комментарии ({{ idea.comments|length }})</button>
+                        <!-- Обновленная кнопка комментариев -->
+                        <button class="action-btn outline" onclick="openIdeaCommentModal({{ idea.id }})">💬 Комментарии ({{ idea.comments|length }})</button>
                     </div>
                 </div>
+
+                <!-- === МОДАЛЬНОЕ ОКНО КОММЕНТАРИЕВ (ВНУТРИ ЦИКЛА) === -->
+                <div id="ideaCommentModal_{{ idea.id }}" class="modal">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h2>💬 Комментарии к "{{ idea.title }}"</h2>
+                            <button class="modal-close" onclick="closeIdeaCommentModal({{ idea.id }})">&times;</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <!-- Список комментариев -->
+                            <div style="max-height: 250px; overflow-y: auto; margin-bottom: 20px; background: #f9fafb; padding: 15px; border-radius: 8px;">
+                                {% if idea.comments %}
+                                    {% for c in idea.comments %}
+                                    <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                                        <b>{{ c.user.username }}</b> <span style="color:#888; font-size:0.8rem">{{ c.date }}</span>
+                                        <p style="margin: 5px 0 0 0;">{{ c.text }}</p>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p style="text-align: center; color: #999;">Пока нет комментариев.</p>
+                                {% endif %}
+                            </div>
+                            <!-- Форма -->
+                            <form action="/add_comment/{{ idea.id }}" method="POST">
+                                <textarea name="comment_text" placeholder="Написать..." required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;"></textarea>
+                                <button type="submit" style="margin-top: 10px; background: #374151; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;">Отправить</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 {% endfor %}
             {% else %}
                 <div class="empty-state">
-                    <div class="empty-icon">💡</div>
+                    <div class="empty-icon"></div>
                     <h3>У вас пока нет идей</h3>
                     <p>Создайте первую идею и начните свой проект!</p>
                     <button class="btn-create" onclick="openModal()">+ Создать идею</button>
                 </div>
             {% endif %}
         </div>
+        <!-- === МОДАЛЬНОЕ ОКНО СОЗДАНИЯ === -->
         <div id="createIdeaModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -136,7 +169,7 @@
                         <div class="form-group">
                             <label>Видимость</label>
                             <select name="visibility">
-                                <option value="draft">📝 Черновик</option>
+                                <option value="draft"> Черновик</option>
                                 <option value="private">🔒 Приватная</option>
                                 <option value="published">🌍 Опубликовать</option>
                             </select>
@@ -185,41 +218,42 @@
         </div>
     </div>
 
-    <!-- === МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ === -->
-    <div id="editIdeaModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>✏️ Редактировать идею</h2>
-                <button class="modal-close" onclick="closeAnyModal('editIdeaModal')">&times;</button>
-            </div>
-            <form id="editForm" method="POST" class="idea-form">
-                <div class="form-group">
-                    <label>Название идеи *</label>
-                    <input type="text" id="editTitle" name="title" required>
+     <!-- === МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ === -->
+        <div id="editIdeaModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>✏️ Редактировать идею</h2>
+                    <button class="modal-close" onclick="closeAnyModal('editIdeaModal')">&times;</button>
                 </div>
-                <div class="form-group">
-                    <label>Описание *</label>
-                    <textarea id="editDesc" name="description" rows="4" required></textarea>
-                </div>
-                <div class="form-row">
+                <form id="editForm" method="POST" class="idea-form">
                     <div class="form-group">
-                        <label>Категория</label>
-                        <select id="editCategory" name="category">
-                            <option value="edtech">EdTech</option>
-                            <option value="health">HealthTech</option>
-                            <option value="fintech">FinTech</option>
-                            <option value="other">Другое</option>
-                        </select>
+                        <label>Название идеи *</label>
+                        <input type="text" id="editTitle" name="title" required>
                     </div>
                     <div class="form-group">
-                        <label>Видимость</label>
-                        <select id="editVisibility" name="visibility">
-                            <option value="draft">📝 Черновик</option>
-                            <option value="private">🔒 Приватная</option>
-                            <option value="published">🌍 Опубликовать</option>
-                        </select>
+                        <label>Описание *</label>
+                        <textarea id="editDesc" name="description" rows="4" required></textarea>
                     </div>
-                </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Категория</label>
+                            <select id="editCategory" name="category">
+                                <option value="edtech">EdTech</option>
+                                <option value="health">HealthTech</option>
+                                <option value="fintech">FinTech</option>
+                                <option value="other">Другое</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Видимость</label>
+                            <select id="editVisibility" name="visibility">
+                                <option value="draft"> Черновик</option>
+                                <option value="private">🔒 Приватная</option>
+                                <option value="published">🌍 Опубликовать</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label>Лицензия</label>
                         <select id="editLicense" name="license">
@@ -243,28 +277,15 @@
             </div>
         </div>
     </main>
-        <!-- === МОДАЛЬНОЕ ОКНО КОММЕНТАРИЕВ === -->
-    <div id="commentsModal" class="modal">
-        <div class="modal-content" style="max-width: 650px;">
-            <div class="modal-header">
-                <h2 id="commentsModalTitle">💬 Комментарии</h2>
-                <button class="modal-close" onclick="closeCommentsModal()">&times;</button>
-            </div>
-            <div style="padding: 24px;">
-                <form id="commentForm" method="POST" style="margin-bottom: 20px;">
-                    <textarea name="comment_text" placeholder="Напишите комментарий..." required
-                              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px;
-                                     resize: vertical; font-family: inherit; outline: none; min-height: 80px;"></textarea>
-                    <button type="submit" style="margin-top: 10px; background: #374151; color: white;
-                               border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;
-                               font-weight: 500;">Отправить</button>
-                </form>
-                <div id="commentsList" style="max-height: 350px; overflow-y: auto; padding-right: 5px;">
-                    <!-- Сюда JS подгрузит комментарии -->
-                </div>
-            </div>
-        </div>
-    </div>
+        <script>
+        // Функции для комментариев идей
+        function openIdeaCommentModal(id) {
+            document.getElementById('ideaCommentModal_' + id).classList.add('active');
+        }
+        function closeIdeaCommentModal(id) {
+            document.getElementById('ideaCommentModal_' + id).classList.remove('active');
+        }
+    </script>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
