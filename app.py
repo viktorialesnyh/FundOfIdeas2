@@ -206,7 +206,7 @@ def team():
     user = get_current_user()
     if not user: return redirect(url_for('index'))
     profiles = TeamProfile.query.filter(TeamProfile.user_id != user.id).all()
-    teams = Team.query.filter(Team.status == 'recruiting').all()
+    teams = Team.query.filter(Team.status == 'recruiting').order_by(Team.id.desc()).all()
     my_profile = TeamProfile.query.filter_by(user_id=user.id).first()
     return render_template('team.html', username=user.username, profiles=profiles, teams=teams, my_profile=my_profile)
 
@@ -410,7 +410,7 @@ def create_team():
     description = request.form.get('description')
     if name:
         new_team = Team(name=name, description=description, leader_id=user.id, status='recruiting',
-                        date=datetime.datetime.now().strftime('%d %b %Y'))
+                        date=datetime.datetime.now().strftime('%d %b %Y, %H:%M'))  # <--- ИСПРАВЛЕНО: добавлена скобка )
         db.session.add(new_team)
         db.session.add(TeamMember(team_id=new_team.id, user_id=user.id, role='Лидер',
                                   joined_date=datetime.datetime.now().strftime('%d %b %Y')))
@@ -424,18 +424,51 @@ def team_members(team_id):
     if not user: return redirect(url_for('index'))
     team = Team.query.get_or_404(team_id)
     members = TeamMember.query.filter_by(team_id=team_id).all()
-    return render_template('team_members.html', team=team, members=members, username=user.username)
+    return render_template('team_members.html', username=user.username, team=team, members=members, user=user)
 
 
 @app.route('/join_team/<int:team_id>', methods=['POST'])
 def join_team(team_id):
     user = get_current_user()
     if not user: return redirect(url_for('index'))
-    existing = TeamMember.query.filter_by(team_id=team_id, user_id=user.id).first()
-    if not existing:
-        db.session.add(TeamMember(team_id=team_id, user_id=user.id, role='Участник',
-                                  joined_date=datetime.datetime.now().strftime('%d %b %Y')))
-        db.session.commit()
+    team = Team.query.get_or_404(team_id)
+    # Проверяем, не участник ли уже
+    existing_member = TeamMember.query.filter_by(
+        team_id=team_id,
+        user_id=user.id
+    ).first()
+
+    if existing_member:
+        flash('Вы уже являетесь участником этой команды', 'info')
+        return redirect(url_for('team_members', team_id=team_id))
+
+    # Добавляем в команду
+    new_member = TeamMember(
+        team_id=team_id,
+        user_id=user.id,
+        role='Участник',
+        joined_date=datetime.datetime.now().strftime('%d %b %Y, %H:%M')
+    )
+
+    db.session.add(new_member)
+    db.session.commit()
+
+    flash(f'Вы успешно присоединились к команде "{team.name}"!', 'success')
+    return redirect(url_for('team_members', team_id=team_id))
+
+
+@app.route('/delete_team/<int:team_id>', methods=['POST'])
+def delete_team(team_id):
+    user = get_current_user()
+    if not user: return redirect(url_for('index'))
+    team = Team.query.get_or_404(team_id)
+    if team.leader_id != user.id:
+        flash('Только лидер может удалить команду', 'error')
+        return redirect(url_for('team_members', team_id=team_id))
+    TeamMember.query.filter_by(team_id=team_id).delete()
+    db.session.delete(team)
+    db.session.commit()
+    flash(f'Команда "{team.name}" удалена', 'success')
     return redirect(url_for('team'))
 
 

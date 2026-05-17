@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ team.name }} - Участники | Фонд Идей</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/team.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body class="dash-body">
+    <nav class="navbar">
+        <div class="nav-brand">💡 Фонд Идей</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Главная</a>
+            <a href="{{ url_for('ideas') }}">Мои идеи</a>
+            <a href="{{ url_for('diary') }}">Дневник</a>
+            <a href="{{ url_for('team') }}">Команда</a>
+            <a href="{{ url_for('profile') }}">Профиль</a>
+        </div>
+        <div class="nav-user">
+            <span>{{ username }}</span>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Выйти</a>
+        </div>
+    </nav>
+
+    <main class="team-main" style="max-width: 900px;">
+        <div style="margin-bottom: 40px;">
+            <a href="{{ url_for('team') }}" style="color: #6b7280; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 0.95rem;">
+                ← Назад к командам
+            </a>
+            <h1 style="font-size: 2rem; margin-bottom: 12px; color: #111827;">{{ team.name }}</h1>
+            <p style="color: #6b7280; font-size: 1.05rem; line-height: 1.6;">{{ team.description or 'Описание отсутствует' }}</p>
+            <div style="margin-top: 16px; display: flex; gap: 20px; flex-wrap: wrap;">
+                <span style="background: #f9fafb; padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; color: #4b5563;">
+                    👤 Лидер: <strong>{{ team.leader.username }}</strong>
+                </span>
+                <span style="background: #f9fafb; padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; color: #4b5563;">
+                    📅 Создана: {{ team.date }}
+                </span>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 1.4rem; margin-bottom: 20px; color: #111827; padding-bottom: 12px; border-bottom: 2px solid #e5e7eb;">
+                👥 Участники команды ({{ members|length }})
+            </h2>
+
+            {% if members %}
+                <div class="team-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                    {% for member in members %}
+                    <div class="team-card" style="border-left: 4px solid #C4B49A;">
+                        <div class="card-header-team">
+                            <span class="badge" style="background: #C4B49A; color: white;">
+                                {{ '👑 Лидер' if member.role == 'Лидер' else ' Участник' }}
+                            </span>
+                            <span class="date">{{ member.joined_date }}</span>
+                        </div>
+                        <h3 style="font-size: 1.1rem; margin: 12px 0 8px 0; color: #111827;">
+                            {{ member.user.username }}
+                        </h3>
+                        <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 12px;">
+                            Присоединился: {{ member.joined_date }}
+                        </p>
+
+                        {% if member.user.team_profiles %}
+                            {% set profile = member.user.team_profiles[0] %}
+                            {% if profile.role or profile.skills %}
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                                {% if profile.role %}
+                                <p style="font-size: 0.9rem; color: #4b5563; margin-bottom: 6px;">
+                                    <strong>Роль:</strong> {{ profile.role }}
+                                </p>
+                                {% endif %}
+                                {% if profile.skills %}
+                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                    {% for skill in profile.skills.split(',')[:3] %}
+                                        {% if skill.strip() %}
+                                        <span style="background: #f3f4f6; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; color: #6b7280;">
+                                            {{ skill.strip() }}
+                                        </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state" style="text-align: center; padding: 60px 20px; color: #6b7280; background: #f9fafb; border-radius: 12px;">
+                    <div style="font-size: 3rem; margin-bottom: 16px;">👥</div>
+                    <h3 style="font-size: 1.2rem; color: #111827; margin-bottom: 8px;">Пока нет участников</h3>
+                    <p>Команда пуста. Будьте первым, кто присоединится!</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- КНОПКИ ДЕЙСТВИЙ (ИСПРАВЛЕНО) -->
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; padding-top: 24px; border-top: 2px solid #e5e7eb;">
+            <a href="{{ url_for('team') }}" class="action-btn outline" style="flex: 1; min-width: 180px; padding: 12px; text-decoration: none; display: inline-flex; justify-content: center;">
+                ← Назад к списку
+            </a>
+
+            {% if team.leader_id == user.id %}
+            <!-- Лидер видит кнопку удаления (обёрнута в форму для отправки POST) -->
+            <form action="{{ url_for('delete_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;"
+                  onsubmit="return confirm('Вы уверены? Команда и все данные будут удалены безвозвратно.')">
+                <button type="submit" class="action-btn" style="background: #ef4444; color: white; width: 100%; padding: 12px;">
+                    🗑️ Удалить команду
+                </button>
+            </form>
+            {% else %}
+            <!-- Не-лидер видит кнопку вступления -->
+            <form action="{{ url_for('join_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;">
+                <button type="submit" class="action-btn" style="background: #C4B49A; color: white; width: 100%; padding: 12px;">
+                    🤝 Присоединиться к команде
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
