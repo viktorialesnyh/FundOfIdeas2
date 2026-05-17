@@ -8,7 +8,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256))
 
-    bio = db.Column(db.Text, default="Основатель стартапа в области EdTech...")
+    bio = db.Column(db.Text, default="")
     about_me = db.Column(db.Text, default="")
     city = db.Column(db.String(100), default="Москва, Россия")
     joined_year = db.Column(db.String(10), default="2026")
