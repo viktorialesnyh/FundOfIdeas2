@@ -36,33 +36,43 @@ function toggleSkillsForm() {
     if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
 }
 
-// === ИДЕИ (Фильтры/Поиск на странице /ideas) ===
+// === ИДЕИ (Фильтры/Поиск на странице /ideas) - РАСШИРЕННЫЙ ===
 document.addEventListener("DOMContentLoaded", () => {
     const filterBtns = document.querySelectorAll('.filter-btn');
     const searchInput = document.getElementById('searchInput');
     const cards = document.querySelectorAll('.idea-card');
+
+    function filterCards() {
+        const term = searchInput ? searchInput.value.toLowerCase() : '';
+        cards.forEach(card => {
+            const title = card.querySelector('h3').textContent.toLowerCase();
+            const desc = card.querySelector('p').textContent.toLowerCase();
+            const tags = Array.from(card.querySelectorAll('.card-tags span')).map(span => span.textContent.toLowerCase()).join(' ');
+            const matchesSearch = term === '' || title.includes(term) || desc.includes(term) || tags.includes(term);
+
+            const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            const visibility = card.dataset.visibility;
+            const matchesFilter = activeFilter === 'all' || visibility === activeFilter;
+
+            if (matchesSearch && matchesFilter) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+    }
+
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 filterBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                const filter = btn.dataset.filter;
-                cards.forEach(card => {
-                    if (filter === 'all' || card.dataset.visibility === filter) card.classList.remove('hidden');
-                    else card.classList.add('hidden');
-                });
+                filterCards();
             });
         });
     }
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            cards.forEach(card => {
-                const title = card.querySelector('h3').textContent.toLowerCase();
-                if (title.includes(term)) card.classList.remove('hidden');
-                else card.classList.add('hidden');
-            });
-        });
+        searchInput.addEventListener('input', filterCards);
     }
 });
 

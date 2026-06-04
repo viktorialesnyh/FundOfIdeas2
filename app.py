@@ -18,7 +18,7 @@ def get_current_user():
     return None
 
 
-# === МАРШРУТЫ АВТОРИЗАЦИИ ===
+# === АВТОРИЗАЦИЯ ===
 @app.route('/')
 def index():
     if 'user_id' in session:
@@ -31,20 +31,10 @@ def login():
     email = request.form.get('email')
     password = request.form.get('password')
     user = User.query.filter_by(email=email).first()
-
-    if user:
-        if user.password_hash:
-            if check_password_hash(user.password_hash, password):
-                session['user_id'] = user.id
-                return redirect(url_for('dashboard'))
-            else:
-                flash('Неверный пароль', 'error')
-                return redirect(url_for('index'))
-        else:
-            session['user_id'] = user.id
-            return redirect(url_for('dashboard'))
-
-    flash('Пользователь не найден', 'error')
+    if user and user.check_password(password):
+        session['user_id'] = user.id
+        return redirect(url_for('dashboard'))
+    flash('Неверный email или пароль', 'error')
     return redirect(url_for('index'))
 
 
@@ -53,41 +43,64 @@ def register():
     email = request.form.get('email', '').strip().lower()
     username = request.form.get('username', '').strip()
     password = request.form.get('password')
-    confirm_password = request.form.get('confirm_password')
-
-    if password != confirm_password:
-        flash('Пароли не совпадают!', 'error')
+    confirm = request.form.get('confirm_password')
+    if password != confirm:
+        flash('Пароли не совпадают', 'error')
         return redirect(url_for('index', tab='register'))
-
     if User.query.filter_by(email=email).first():
-        flash('Аккаунт с таким email уже существует. Попробуйте войти.', 'error')
+        flash('Email уже зарегистрирован', 'error')
         return redirect(url_for('index', tab='register'))
-
     if not username:
-        username = "User"
-
+        username = email.split('@')[0]
     new_user = User(username=username, email=email)
     new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+    session['user_id'] = new_user.id
+    return redirect(url_for('dashboard'))
 
-    try:
-        db.session.add(new_user)
-        db.session.commit()
-        session['user_id'] = new_user.id
-        return redirect(url_for('dashboard'))
-    except Exception:
-        db.session.rollback()
-        flash('Ошибка регистрации. Попробуйте позже.', 'error')
-        return redirect(url_for('index', tab='register'))
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    return redirect(url_for('index'))
+
+
+# === ПУБЛИЧНЫЙ ПРОФИЛЬ ===
+@app.route('/user/<int:user_id>')
+def user_profile(user_id):
+    current = get_current_user()
+    user = User.query.get_or_404(user_id)
+    show_email = user.is_email_visible and (current and current.id == user.id)
+    show_city = user.is_city_visible
+    show_skills = user.is_skills_visible
+    show_bio = user.is_description_visible
+    show_ideas = user.is_ideas_visible
+    if current and current.id == user.id:
+        show_email = show_city = show_skills = show_bio = show_ideas = True
+    if show_ideas:
+        if current and current.id == user.id:
+            ideas = Idea.query.filter_by(user_id=user.id).order_by(Idea.id.desc()).all()
+        else:
+            ideas = Idea.query.filter_by(user_id=user.id, visibility='published').order_by(Idea.id.desc()).all()
+    else:
+        ideas = []
+    return render_template('user_profile.html',
+                           profile_user=user,
+                           show_email=show_email,
+                           show_city=show_city,
+                           show_skills=show_skills,
+                           show_bio=show_bio,
+                           ideas=ideas,
+                           current_user=current)
 
 
 # === ОСНОВНЫЕ МАРШРУТЫ ===
-
 @app.route('/dashboard')
 def dashboard():
     user = get_current_user()
     if not user:
         return redirect(url_for('index'))
-
     user_ideas = Idea.query.filter_by(user_id=user.id).all()
     user_categories = {i.category for i in user_ideas if i.category}
     user_tags = set()
@@ -95,11 +108,9 @@ def dashboard():
         if i.tags:
             user_tags.update(t.strip().lower() for t in i.tags.split(','))
     user_skills = {s.name.lower() for s in Skill.query.filter_by(user_id=user.id).all()}
-
     candidates = Idea.query.filter(Idea.visibility == 'published').all()
     scored_ideas = []
     now = datetime.datetime.now()
-
     for idea in candidates:
         score = 0
         if idea.category in user_categories:
@@ -117,11 +128,9 @@ def dashboard():
         except ValueError:
             pass
         scored_ideas.append({'idea': idea, 'score': score})
-
     scored_ideas.sort(key=lambda x: (x['score'], x['idea'].id), reverse=True)
     recommended_ideas = [item['idea'] for item in scored_ideas[:15]]
     liked_ideas = {l.idea_id for l in Like.query.filter_by(user_id=user.id).all()}
-
     return render_template('dashboard.html', username=user.username, recommended_ideas=recommended_ideas,
                            liked_ideas=liked_ideas)
 
@@ -136,20 +145,37 @@ def search_ideas():
     if not query:
         return jsonify([])
 
-    search_term = f'%{query}%'
+    words = query.lower().split()
+    all_ideas = Idea.query.filter(Idea.visibility == 'published').all()
+    scored_results = []
 
-    results = Idea.query.join(User, Idea.user_id == User.id).filter(
-        Idea.visibility == 'published',
-        or_(
-            Idea.title.ilike(search_term),
-            Idea.description.ilike(search_term),
-            Idea.tags.ilike(search_term),
-            User.username.ilike(search_term)
-        )
-    ).order_by(Idea.id.desc()).limit(20).all()
+    for idea in all_ideas:
+        score = 0
+        title_lower = idea.title.lower()
+        desc_lower = idea.description.lower() if idea.description else ''
+        tags_lower = idea.tags.lower() if idea.tags else ''
+        author_lower = idea.author.username.lower() if idea.author else ''
+
+        for word in words:
+            if word in title_lower:
+                score += 10
+                if title_lower == word:
+                    score += 20
+            if word in desc_lower:
+                score += 5
+            if word in tags_lower:
+                score += 8
+            if word in author_lower:
+                score += 7
+
+        if score > 0:
+            scored_results.append((score, idea))
+
+    scored_results.sort(key=lambda x: (x[0], x[1].id), reverse=True)
+    top_ideas = [idea for _, idea in scored_results[:30]]
 
     data = []
-    for idea in results:
+    for idea in top_ideas:
         data.append({
             'id': idea.id,
             'title': idea.title,
@@ -159,7 +185,8 @@ def search_ideas():
             'author_username': idea.author.username if idea.author else 'Аноним',
             'visibility': idea.visibility,
             'category': idea.category,
-            'license': idea.license
+            'license': idea.license,
+            'comments_count': len(idea.comments)
         })
     return jsonify(data)
 
@@ -203,45 +230,6 @@ def team():
     teams = Team.query.filter(Team.status == 'recruiting').order_by(Team.id.desc()).all()
     my_profile = TeamProfile.query.filter_by(user_id=user.id).first()
     return render_template('team.html', username=user.username, profiles=profiles, teams=teams, my_profile=my_profile)
-
-
-@app.route('/logout')
-def logout():
-    session.pop('user_id', None)
-    return redirect(url_for('index'))
-
-
-# === НОВЫЙ МАРШРУТ: ПУБЛИЧНЫЙ ПРОФИЛЬ ===
-@app.route('/user/<int:user_id>')
-def user_profile(user_id):
-    current = get_current_user()
-    user = User.query.get_or_404(user_id)
-
-    show_email = user.is_email_visible and (current and current.id == user.id)
-    show_city = user.is_city_visible
-    show_skills = user.is_skills_visible
-    show_bio = user.is_description_visible
-    show_ideas = user.is_ideas_visible
-
-    if current and current.id == user.id:
-        show_email = show_city = show_skills = show_bio = show_ideas = True
-
-    if show_ideas:
-        if current and current.id == user.id:
-            ideas = Idea.query.filter_by(user_id=user.id).order_by(Idea.id.desc()).all()
-        else:
-            ideas = Idea.query.filter_by(user_id=user.id, visibility='published').order_by(Idea.id.desc()).all()
-    else:
-        ideas = []
-
-    return render_template('user_profile.html',
-                           profile_user=user,
-                           show_email=show_email,
-                           show_city=show_city,
-                           show_skills=show_skills,
-                           show_bio=show_bio,
-                           ideas=ideas,
-                           current_user=current)
 
 
 # === ОБНОВЛЕНИЕ ПРОФИЛЯ ===
@@ -314,7 +302,6 @@ def delete_account():
     if not user: return redirect(url_for('index'))
     if not user.check_password(request.form.get('confirm_password')):
         return redirect(url_for('profile', error='Неверный пароль'))
-
     DiaryEntry.query.filter_by(user_id=user.id).delete()
     Skill.query.filter_by(user_id=user.id).delete()
     TeamProfile.query.filter_by(user_id=user.id).delete()
@@ -386,56 +373,6 @@ def delete_team_profile():
     return redirect(url_for('team'))
 
 
-# === ЛАЙКИ И КОММЕНТАРИИ ===
-@app.route('/like_idea/<int:idea_id>', methods=['POST'])
-def like_idea(idea_id):
-    user = get_current_user()
-    if not user: return redirect(url_for('index'))
-
-    existing = Like.query.filter_by(user_id=user.id, idea_id=idea_id).first()
-    if existing:
-        db.session.delete(existing)
-        is_liked = False
-    else:
-        db.session.add(Like(user_id=user.id, idea_id=idea_id))
-        is_liked = True
-
-    db.session.commit()
-    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        new_count = Like.query.filter_by(idea_id=idea_id).count()
-        return jsonify({'likes': new_count, 'is_liked': is_liked})
-    return redirect(url_for('ideas'))
-
-
-# === ОБНОВЛЁННЫЕ МАРШРУТЫ КОММЕНТАРИЕВ (с поддержкой ответов и асинхронности) ===
-@app.route('/add_comment/<int:idea_id>', methods=['POST'])
-def add_comment(idea_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorized'}), 401
-    text = request.form.get('comment_text')
-    parent_id = request.form.get('parent_id', type=int)
-    if text:
-        comment = Comment(user_id=user.id, idea_id=idea_id, text=text, parent_id=parent_id)
-        db.session.add(comment)
-        db.session.commit()
-        new_count = Comment.query.filter_by(idea_id=idea_id).count()
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': True, 'comment_id': comment.id, 'comments_count': new_count})
-    return redirect(request.referrer or url_for('dashboard'))
-
-
-@app.route('/get_comments/<int:idea_id>', methods=['GET'])
-def get_comments(idea_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorized'}), 401
-    comments = Comment.query.filter_by(idea_id=idea_id).order_by(Comment.id.asc()).all()
-    comments_data = [{'id': c.id, 'text': c.text, 'author': c.user.username, 'author_id': c.user_id,
-                      'parent_id': c.parent_id, 'date': c.date or ''} for c in comments]
-    return jsonify(comments_data)
-
-
 @app.route('/create_team', methods=['POST'])
 def create_team():
     user = get_current_user()
@@ -504,6 +441,53 @@ def send_message():
     if not user: return redirect(url_for('index'))
     flash('Сообщение отправлено!', 'success')
     return redirect(url_for('team'))
+
+
+# === ЛАЙКИ И КОММЕНТАРИИ ===
+@app.route('/like_idea/<int:idea_id>', methods=['POST'])
+def like_idea(idea_id):
+    user = get_current_user()
+    if not user: return redirect(url_for('index'))
+    existing = Like.query.filter_by(user_id=user.id, idea_id=idea_id).first()
+    if existing:
+        db.session.delete(existing)
+        is_liked = False
+    else:
+        db.session.add(Like(user_id=user.id, idea_id=idea_id))
+        is_liked = True
+    db.session.commit()
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        new_count = Like.query.filter_by(idea_id=idea_id).count()
+        return jsonify({'likes': new_count, 'is_liked': is_liked})
+    return redirect(url_for('ideas'))
+
+
+@app.route('/add_comment/<int:idea_id>', methods=['POST'])
+def add_comment(idea_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    text = request.form.get('comment_text')
+    parent_id = request.form.get('parent_id', type=int)
+    if text:
+        comment = Comment(user_id=user.id, idea_id=idea_id, text=text, parent_id=parent_id)
+        db.session.add(comment)
+        db.session.commit()
+        new_count = Comment.query.filter_by(idea_id=idea_id).count()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'comment_id': comment.id, 'comments_count': new_count})
+    return redirect(request.referrer or url_for('dashboard'))
+
+
+@app.route('/get_comments/<int:idea_id>', methods=['GET'])
+def get_comments(idea_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    comments = Comment.query.filter_by(idea_id=idea_id).order_by(Comment.id.asc()).all()
+    comments_data = [{'id': c.id, 'text': c.text, 'author': c.user.username, 'author_id': c.user_id,
+                      'parent_id': c.parent_id, 'date': c.date or ''} for c in comments]
+    return jsonify(comments_data)
 
 
 @app.route('/update_diary/<int:entry_id>', methods=['POST'])
