@@ -14,7 +14,7 @@ class User(db.Model):
     city = db.Column(db.String(100), default="Москва, Россия")
     joined_year = db.Column(db.String(10), default="2026")
 
-    # Настройки конфиденциальности (True = видно всем, False = скрыто)
+    # Настройки конфиденциальности
     is_email_visible = db.Column(db.Boolean, default=True)
     is_city_visible = db.Column(db.Boolean, default=True)
     is_photo_visible = db.Column(db.Boolean, default=True)
@@ -96,16 +96,13 @@ class Comment(db.Model):
     replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), lazy=True)
 
 
-# === МОДЕЛИ КОМАНД ===
-
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     leader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    status = db.Column(db.String(20), default='active')  # active, recruiting, closed
+    status = db.Column(db.String(20), default='active')
     date = db.Column(db.String(50))
-    # Связи
     leader = db.relationship('User', backref='led_teams', lazy=True)
     members = db.relationship('TeamMember', backref='team', lazy=True)
 
@@ -116,5 +113,4 @@ class TeamMember(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     role = db.Column(db.String(50))
     joined_date = db.Column(db.String(50))
-    # Связи
     user = db.relationship('User', backref='team_memberships', lazy=True)
