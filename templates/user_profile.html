@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ profile_user.username }} — Фонд Идей</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+</head>
+<body class="dash-body">
+    <nav class="navbar">
+        <div class="nav-brand">💡 Фонд Идей</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Главная</a>
+            <a href="{{ url_for('ideas') }}">Мои идеи</a>
+            <a href="{{ url_for('diary') }}">Дневник</a>
+            <a href="{{ url_for('team') }}">Команда</a>
+            <a href="{{ url_for('profile') }}">Профиль</a>
+        </div>
+        <div class="nav-user">
+            <span>{{ current_user.username if current_user else 'Гость' }}</span>
+            {% if current_user %}
+                <a href="{{ url_for('logout') }}" class="btn-logout">Выйти</a>
+            {% else %}
+                <a href="{{ url_for('index') }}" class="btn-logout">Войти</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="profile-main">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <span class="avatar-initials">{{ profile_user.username[:2].upper() }}</span>
+            </div>
+            <div class="profile-info">
+                <h1>{{ profile_user.username }}</h1>
+                {% if show_bio %}
+                    <p class="bio-text" style="color:#6b7280; margin-bottom:10px;">{{ profile_user.bio }}</p>
+                {% else %}
+                    <p class="bio-text" style="color:#9ca3af; font-style:italic;">Информация скрыта</p>
+                {% endif %}
+                <div class="profile-meta">
+                    {% if show_city %}
+                        <span>📍 {{ profile_user.city }}</span>
+                    {% else %}
+                        <span>📍 Скрыто</span>
+                    {% endif %}
+                    <span>📅 Участник с {{ profile_user.joined_year }}</span>
+                    {% if show_email %}
+                        <span>📧 {{ profile_user.email }}</span>
+                    {% else %}
+                        <span>📧 Скрыто</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if show_bio %}
+        <div class="section-card">
+            <div class="section-header"><h2>📝 О себе</h2></div>
+            <p style="white-space: pre-wrap;">{{ profile_user.about_me or 'Пользователь пока ничего не рассказал о себе.' }}</p>
+        </div>
+        {% endif %}
+
+        {% if show_skills and profile_user.skills %}
+        <div class="section-card">
+            <div class="section-header"><h2>🛠 Навыки</h2></div>
+            <div class="skills-grid">
+                {% for skill in profile_user.skills %}
+                <div class="skill-card">
+                    <div class="skill-top">
+                        <span class="skill-icon">{{ skill.icon }}</span>
+                        <h3>{{ skill.name }}</h3>
+                    </div>
+                    <div class="progress-bar"><div class="fill" style="width: {{ skill.level }}%;"></div></div>
+                    <div class="skill-level">{{ skill.level_text }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% elif show_skills %}
+        <div class="section-card">
+            <div class="section-header"><h2>🛠 Навыки</h2></div>
+            <p>Пользователь не указал навыки.</p>
+        </div>
+        {% endif %}
+
+        {% if ideas %}
+        <div class="section-card">
+            <div class="section-header"><h2>💡 Идеи</h2></div>
+            <div class="ideas-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 20px;">
+                {% for idea in ideas %}
+                <div class="idea-card" style="padding: 16px; border:1px solid #e5e7eb; border-radius: 12px;">
+                    <h3 style="font-size:1rem;">{{ idea.title }}</h3>
+                    <p style="font-size:0.85rem; color:#4b5563;">{{ idea.description[:120] }}{% if idea.description|length > 120 %}...{% endif %}</p>
+                    <div class="card-tags">
+                        {% if idea.tags %}
+                            {% for tag in idea.tags.split(',')[:2] %}
+                                <span>{{ tag.strip() }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <span class="date" style="font-size:0.7rem;">{{ idea.date }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% elif show_ideas %}
+        <div class="section-card">
+            <div class="section-header"><h2>💡 Идеи</h2></div>
+            <p>У пользователя пока нет идей.</p>
+        </div>
+        {% endif %}
+    </main>
+</body>
+</html>

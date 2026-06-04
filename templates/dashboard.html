@@ -48,15 +48,12 @@
         </aside>
 
         <section class="feed-container" id="feedContainer">
-            <!-- Поиск -->
             <div class="feed-search-bar">
                 <span class="search-icon">🔍</span>
                 <input type="text" id="feedSearchInput" placeholder="Поиск по названию, описанию, тегам или автору (нажмите Enter)..." autocomplete="off">
                 <button id="feedSearchClear" class="search-clear-btn hidden">✕</button>
             </div>
             <div id="feedLoading" class="feed-loading hidden">Поиск...</div>
-
-            <!-- Рекомендации -->
             <h2 class="feed-title" id="feedTitle">Рекомендации для вас</h2>
 
             {% if recommended_ideas %}
@@ -99,7 +96,7 @@
                             <span class="like-count">{{ idea.likes|length }}</span>
                         </button>
                         <button class="action-btn" onclick="openViewModal(this.closest('.idea-card'))"> Открыть</button>
-                        <button class="action-btn outline" onclick="openCommentsModal({{ idea.id }})">💬 Комментарии</button>
+                        <button class="action-btn outline" id="commentsBtn-{{ idea.id }}" onclick="openCommentsModal({{ idea.id }})">💬 Комментарии ({{ idea.comments|length }})</button>
                     </div>
                 </article>
                 {% endfor %}
@@ -112,7 +109,7 @@
         </section>
     </main>
 
-    <!-- Модальные окна (без изменений) -->
+    <!-- Модальное окно создания идеи -->
     <div id="createIdeaModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h2> Создать новую идею</h2><button class="modal-close" onclick="closeModal()">&times;</button></div>
@@ -130,6 +127,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно просмотра идеи -->
     <div id="viewIdeaModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h2>📖 Просмотр идеи</h2><button class="modal-close" onclick="closeAnyModal('viewIdeaModal')">&times;</button></div>
@@ -144,6 +142,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно редактирования идеи -->
     <div id="editIdeaModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h2>✏️ Редактировать идею</h2><button class="modal-close" onclick="closeAnyModal('editIdeaModal')">&times;</button></div>
@@ -161,12 +160,20 @@
         </div>
     </div>
 
+    <!-- Модальное окно комментариев (асинхронное, с ответами) -->
     <div id="commentsModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header"><h2>💬 Комментарии</h2><button class="modal-close" onclick="closeCommentsModal()">&times;</button></div>
+            <div class="modal-header">
+                <h2>💬 Комментарии</h2>
+                <button class="modal-close" onclick="closeCommentsModal()">&times;</button>
+            </div>
             <div class="comments-section">
-                <form id="commentForm" class="comment-form" method="POST"><textarea name="comment_text" placeholder="Напишите комментарий..." required></textarea><button type="submit">Отправить</button></form>
-                <div class="comments-list"><p class="no-comments">Загрузка...</p></div>
+                <form id="commentForm" onsubmit="return false;">
+                    <textarea id="commentText" placeholder="Напишите комментарий..." required></textarea>
+                    <input type="hidden" id="commentParentId" value="">
+                    <button type="button" onclick="submitComment()">Отправить</button>
+                </form>
+                <div class="comments-list" id="commentsList"></div>
             </div>
         </div>
     </div>
