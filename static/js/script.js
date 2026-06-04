@@ -125,7 +125,7 @@ function openViewModal(card) {
     document.getElementById('viewDate').textContent = ` ${date}`;
     const catNames = {'edtech':'🎓 EdTech','health':'🏥 HealthTech','fintech':'💰 FinTech','other':'📦 Другое'};
     document.getElementById('viewCategory').textContent = catNames[cat] || cat;
-    const visNames = {'draft':' Черновик','private':'🔒 Приватная','published':'🌍 Опубликована'};
+    const visNames = {'draft':'📝 Черновик','private':'🔒 Приватная','published':'🌍 Опубликована'};
     const vb = document.getElementById('viewVisibility');
     vb.textContent = visNames[vis] || vis; vb.className = 'badge ' + vis;
     document.getElementById('viewDesc').textContent = d;
@@ -143,9 +143,34 @@ function openEditModal(card) {
     document.getElementById('editCategory').value = card.dataset.category;
     document.getElementById('editVisibility').value = card.dataset.visibility;
     document.getElementById('editLicense').value = card.dataset.license;
-    document.getElementById('editTags').value = card.dataset.tags;
+    // Для старых версий без новых полей
+    const tagsInput = document.getElementById('editTags');
+    if (tagsInput) tagsInput.value = card.dataset.tags;
     document.getElementById('editForm').action = `/update_idea/${id}`;
     document.getElementById('editIdeaModal').classList.add('active');
+
+    // Заполнение новых полей тегов (если они есть)
+    const editTagSelect = document.getElementById('editTagSelect');
+    const editCustomTags = document.getElementById('editCustomTags');
+    if (editTagSelect && editCustomTags) {
+        const tagsStr = card.dataset.tags || '';
+        const tagsArray = tagsStr.split(',').map(t => t.trim()).filter(t => t);
+        // Сброс выбора
+        for(let opt of editTagSelect.options) opt.selected = false;
+        const customTags = [];
+        for(let tag of tagsArray) {
+            let found = false;
+            for(let opt of editTagSelect.options) {
+                if(opt.value.toLowerCase() === tag.toLowerCase()) {
+                    opt.selected = true;
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) customTags.push(tag);
+        }
+        editCustomTags.value = customTags.join(', ');
+    }
 }
 
 function closeAnyModal(id) { const m = document.getElementById(id); if(m) m.classList.remove('active'); }
@@ -157,14 +182,18 @@ let currentIdeaIdForComments = null;
 
 async function openCommentsModal(ideaId) {
     currentIdeaIdForComments = ideaId;
-    document.getElementById('commentText').value = '';
-    document.getElementById('commentParentId').value = '';
-    document.getElementById('commentsModal').classList.add('active');
+    const commentText = document.getElementById('commentText');
+    const commentParentId = document.getElementById('commentParentId');
+    if (commentText) commentText.value = '';
+    if (commentParentId) commentParentId.value = '';
+    const modal = document.getElementById('commentsModal');
+    if (modal) modal.classList.add('active');
     await loadComments(ideaId);
 }
 
 async function loadComments(ideaId) {
     const list = document.getElementById('commentsList');
+    if (!list) return;
     list.innerHTML = '<p class="no-comments">Загрузка...</p>';
     try {
         const res = await fetch(`/get_comments/${ideaId}`);
@@ -218,10 +247,13 @@ async function loadComments(ideaId) {
 }
 
 function showReplyForm(commentId) {
-    document.getElementById('commentParentId').value = commentId;
+    const parentField = document.getElementById('commentParentId');
+    if (parentField) parentField.value = commentId;
     const textarea = document.getElementById('commentText');
-    textarea.focus();
-    textarea.scrollIntoView({ behavior: 'smooth' });
+    if (textarea) {
+        textarea.focus();
+        textarea.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 async function submitComment() {
@@ -259,7 +291,8 @@ function updateCommentsCount(ideaId, newCount) {
 }
 
 function closeCommentsModal() {
-    document.getElementById('commentsModal').classList.remove('active');
+    const modal = document.getElementById('commentsModal');
+    if (modal) modal.classList.remove('active');
     currentIdeaIdForComments = null;
 }
 
@@ -282,47 +315,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBtn = document.getElementById('feedSearchClear');
     const loading = document.getElementById('feedLoading');
     const feedTitle = document.getElementById('feedTitle');
-    let originalHTML = feedContainer.innerHTML;
+    let originalHTML = feedContainer ? feedContainer.innerHTML : '';
 
-    searchInput.addEventListener('input', () => {
-        if (searchInput.value.trim()) {
-            clearBtn.classList.remove('hidden');
-        } else {
-            clearBtn.classList.add('hidden');
-        }
-    });
-
-    searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            const q = searchInput.value.trim();
-            if (q) {
-                runSearch(q);
+    if (searchInput && clearBtn) {
+        searchInput.addEventListener('input', () => {
+            if (searchInput.value.trim()) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
             }
-        }
-    });
+        });
 
-    clearBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        clearBtn.classList.add('hidden');
-        restoreFeed();
-    });
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const q = searchInput.value.trim();
+                if (q) {
+                    runSearch(q);
+                }
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearBtn.classList.add('hidden');
+            restoreFeed();
+        });
+    }
 
     async function runSearch(query) {
-        loading.classList.remove('hidden');
-        feedTitle.textContent = 'Поиск...';
+        if (loading) loading.classList.remove('hidden');
+        if (feedTitle) feedTitle.textContent = 'Поиск...';
         try {
             const res = await fetch(`/search_ideas?q=${encodeURIComponent(query)}`);
             if (!res.ok) throw new Error('Network error');
             const data = await res.json();
             renderResults(data, query);
         } catch (err) {
-            feedContainer.innerHTML = '<p class="no-results"> Ошибка загрузки.</p>';
+            if (feedContainer) feedContainer.innerHTML = '<p class="no-results"> Ошибка загрузки.</p>';
         } finally {
-            loading.classList.add('hidden');
+            if (loading) loading.classList.add('hidden');
         }
     }
 
     function renderResults(ideas, query) {
+        if (!feedContainer || !feedTitle) return;
         feedTitle.textContent = `Результаты по "${query}"`;
         if (ideas.length === 0) {
             feedContainer.innerHTML = '<p class="no-results">🔍 Идеи не найдены</p>';
@@ -353,8 +389,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function restoreFeed() {
-        feedContainer.innerHTML = originalHTML;
-        feedTitle.textContent = 'Рекомендации для вас';
+        if (feedContainer && originalHTML) feedContainer.innerHTML = originalHTML;
+        if (feedTitle) feedTitle.textContent = 'Рекомендации для вас';
     }
 });
 
@@ -365,3 +401,24 @@ document.addEventListener('DOMContentLoaded', () => {
         switchTab('register');
     }
 });
+
+// === ФУНКЦИИ ДЛЯ РАБОТЫ С ТЕГАМИ (выбор из списка + свои) ===
+function prepareTags(event) {
+    const select = document.getElementById('tagSelect');
+    const selectedTags = select ? Array.from(select.selectedOptions).map(opt => opt.value) : [];
+    const customTagsInput = document.getElementById('customTags');
+    let customTags = customTagsInput ? customTagsInput.value.split(',').map(t => t.trim()).filter(t => t) : [];
+    const allTags = [...selectedTags, ...customTags];
+    const finalTags = document.getElementById('finalTags');
+    if (finalTags) finalTags.value = allTags.join(',');
+}
+
+function prepareEditTags(event) {
+    const select = document.getElementById('editTagSelect');
+    const selectedTags = select ? Array.from(select.selectedOptions).map(opt => opt.value) : [];
+    const customTagsInput = document.getElementById('editCustomTags');
+    let customTags = customTagsInput ? customTagsInput.value.split(',').map(t => t.trim()).filter(t => t) : [];
+    const allTags = [...selectedTags, ...customTags];
+    const finalTags = document.getElementById('editFinalTags');
+    if (finalTags) finalTags.value = allTags.join(',');
+}
