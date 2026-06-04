@@ -143,9 +143,13 @@ function openEditModal(card) {
     document.getElementById('editCategory').value = card.dataset.category;
     document.getElementById('editVisibility').value = card.dataset.visibility;
     document.getElementById('editLicense').value = card.dataset.license;
-    // Для старых версий без новых полей
     const tagsInput = document.getElementById('editTags');
     if (tagsInput) tagsInput.value = card.dataset.tags;
+    // Установка team_id в форме редактирования, если поле существует
+    const teamSelect = document.getElementById('editTeamId');
+    if (teamSelect && card.dataset.team_id) {
+        teamSelect.value = card.dataset.team_id;
+    }
     document.getElementById('editForm').action = `/update_idea/${id}`;
     document.getElementById('editIdeaModal').classList.add('active');
 
@@ -155,7 +159,6 @@ function openEditModal(card) {
     if (editTagSelect && editCustomTags) {
         const tagsStr = card.dataset.tags || '';
         const tagsArray = tagsStr.split(',').map(t => t.trim()).filter(t => t);
-        // Сброс выбора
         for(let opt of editTagSelect.options) opt.selected = false;
         const customTags = [];
         for(let tag of tagsArray) {

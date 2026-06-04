@@ -15,7 +15,7 @@
             <a href="{{ url_for('dashboard') }}">Главная</a>
             <a href="{{ url_for('ideas') }}">Мои идеи</a>
             <a href="{{ url_for('diary') }}">Дневник</a>
-            <a href="{{ url_for('team') }}">Команда</a>
+            <a href="{{ url_for('team') }}" class="active">Команда</a>
             <a href="{{ url_for('profile') }}">Профиль</a>
         </div>
         <div class="nav-user">
@@ -26,7 +26,7 @@
 
     <main class="team-main" style="max-width: 900px;">
 
-        <!-- === БЛОК УВЕДОМЛЕНИЙ === -->
+        <!-- Блок уведомлений -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
@@ -38,7 +38,6 @@
             {% endfor %}
           {% endif %}
         {% endwith %}
-        <!-- ======================================= -->
 
         <!-- Заголовок команды -->
         <div style="margin-bottom: 40px;">
@@ -115,14 +114,59 @@
             {% endif %}
         </div>
 
+        <!-- Идеи команды -->
+        <h2 style="margin-top: 40px;">💡 Идеи команды</h2>
+        {% if team_ideas %}
+            <div class="ideas-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                {% for idea in team_ideas %}
+                <div class="idea-card" style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px;">
+                    <h3>{{ idea.title }}</h3>
+                    <p>{{ idea.description[:100] }}{% if idea.description|length > 100 %}...{% endif %}</p>
+                    <div class="card-tags">
+                        {% if idea.tags %}
+                            {% for tag in idea.tags.split(',')[:2] %}
+                                <span>{{ tag.strip() }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <span class="date" style="font-size: 0.7rem;">{{ idea.date }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Пока нет идей, связанных с этой командой.</p>
+        {% endif %}
+
+        <!-- Дневник команды -->
+        <h2 style="margin-top: 40px;">📝 Дневник команды</h2>
+        {% if team_diary %}
+            <div class="timeline" style="margin-bottom: 40px;">
+                {% for entry in team_diary %}
+                <div class="timeline-item">
+                    <div class="timeline-date" style="font-size: 0.85rem; color: #6b7280; margin-bottom: 8px;">{{ entry.date }}</div>
+                    <div class="timeline-content" style="background: #f9fafb; padding: 16px; border-radius: 10px;">
+                        <span class="tag-badge tag-{{ entry.tag }}">
+                            {% if entry.tag == 'success' %}🟢 Успех
+                            {% elif entry.tag == 'plan' %}🔵 Планы
+                            {% else %}🔴 Проблема{% endif %}
+                        </span>
+                        <p style="margin: 8px 0; white-space: pre-wrap;">{{ entry.text }}</p>
+                        <small style="color: #6b7280;">Автор: {{ entry.owner.username }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Пока нет записей в дневнике, связанных с этой командой.</p>
+        {% endif %}
+
         <!-- Кнопки действий -->
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; padding-top: 24px; border-top: 2px solid #e5e7eb;">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; padding-top: 24px; border-top: 2px solid #e5e7eb; margin-top: 20px;">
             <a href="{{ url_for('team') }}" class="action-btn outline" style="flex: 1; min-width: 180px; padding: 12px; text-decoration: none; display: inline-flex; justify-content: center;">
                 ← Назад к списку
             </a>
 
             {% if team.leader_id == user.id %}
-            <!-- Лидер видит кнопку удаления -->
             <form action="{{ url_for('delete_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;"
                   onsubmit="return confirm('Вы уверены? Команда и все данные будут удалены безвозвратно.')">
                 <button type="submit" class="action-btn" style="background: #ef4444; color: white; width: 100%; padding: 12px;">
@@ -130,7 +174,6 @@
                 </button>
             </form>
             {% else %}
-            <!-- Не-лидер видит кнопку вступления -->
             <form action="{{ url_for('join_team', team_id=team.id) }}" method="POST" style="flex: 1; min-width: 180px;">
                 <button type="submit" class="action-btn" style="background: #C4B49A; color: white; width: 100%; padding: 12px;">
                     🤝 Присоединиться к команде

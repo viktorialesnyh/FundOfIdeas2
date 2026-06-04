@@ -140,22 +140,18 @@ def search_ideas():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
-
     query = request.args.get('q', '').strip()
     if not query:
         return jsonify([])
-
     words = query.lower().split()
     all_ideas = Idea.query.filter(Idea.visibility == 'published').all()
     scored_results = []
-
     for idea in all_ideas:
         score = 0
         title_lower = idea.title.lower()
         desc_lower = idea.description.lower() if idea.description else ''
         tags_lower = idea.tags.lower() if idea.tags else ''
         author_lower = idea.author.username.lower() if idea.author else ''
-
         for word in words:
             if word in title_lower:
                 score += 10
@@ -167,13 +163,10 @@ def search_ideas():
                 score += 8
             if word in author_lower:
                 score += 7
-
         if score > 0:
             scored_results.append((score, idea))
-
     scored_results.sort(key=lambda x: (x[0], x[1].id), reverse=True)
     top_ideas = [idea for _, idea in scored_results[:30]]
-
     data = []
     for idea in top_ideas:
         data.append({
@@ -213,13 +206,18 @@ def diary():
     if request.method == 'POST':
         text = request.form.get('entry_text')
         tag = request.form.get('tag', 'success')
+        team_id = request.form.get('team_id', type=int)
         if text:
-            db.session.add(
-                DiaryEntry(user_id=user.id, text=text, tag=tag, date=datetime.datetime.now().strftime('%d %b, %H:%M')))
+            entry = DiaryEntry(user_id=user.id, text=text, tag=tag,
+                               date=datetime.datetime.now().strftime('%d %b, %H:%M'),
+                               team_id=team_id if team_id else None)
+            db.session.add(entry)
             db.session.commit()
             return redirect(url_for('diary'))
     entries = DiaryEntry.query.filter_by(user_id=user.id).order_by(DiaryEntry.id.desc()).all()
-    return render_template('diary.html', username=user.username, entries=entries)
+    # Получаем команды пользователя для выбора
+    user_teams = Team.query.join(TeamMember).filter(TeamMember.user_id == user.id).all()
+    return render_template('diary.html', username=user.username, entries=entries, user_teams=user_teams)
 
 
 @app.route('/team')
@@ -232,7 +230,6 @@ def team():
     return render_template('team.html', username=user.username, profiles=profiles, teams=teams, my_profile=my_profile)
 
 
-# === ОБНОВЛЕНИЕ ПРОФИЛЯ ===
 @app.route('/update_profile', methods=['POST'])
 def update_profile():
     user = get_current_user()
@@ -268,7 +265,6 @@ def delete_skill(skill_id):
     return redirect(url_for('profile'))
 
 
-# === НАСТРОЙКИ ===
 @app.route('/settings/change_password', methods=['POST'])
 def change_password():
     user = get_current_user()
@@ -312,16 +308,18 @@ def delete_account():
     return redirect(url_for('index'))
 
 
-# === ИДЕИ ===
+# === ИДЕИ (с привязкой к команде) ===
 @app.route('/create_idea', methods=['POST'])
 def create_idea():
     user = get_current_user()
     if not user: return redirect(url_for('index'))
+    team_id = request.form.get('team_id', type=int)
     new_idea = Idea(
         user_id=user.id, title=request.form.get('title'), description=request.form.get('description'),
         category=request.form.get('category', 'other'), visibility=request.form.get('visibility', 'draft'),
         license=request.form.get('license', 'all_rights'), tags=request.form.get('tags', ''),
-        date=datetime.datetime.now().strftime('%d %b %Y')
+        date=datetime.datetime.now().strftime('%d %b %Y'),
+        team_id=team_id if team_id else None
     )
     db.session.add(new_idea)
     db.session.commit()
@@ -340,11 +338,13 @@ def update_idea(idea_id):
     idea.visibility = request.form.get('visibility', 'draft')
     idea.license = request.form.get('license', 'all_rights')
     idea.tags = request.form.get('tags', '')
+    team_id = request.form.get('team_id', type=int)
+    idea.team_id = team_id if team_id else None
     db.session.commit()
     return redirect(url_for('ideas'))
 
 
-# === КОМАНДА ===
+# === КОМАНДА (расширенные маршруты) ===
 @app.route('/create_team_profile', methods=['POST'])
 def create_team_profile():
     user = get_current_user()
@@ -395,7 +395,12 @@ def team_members(team_id):
     if not user: return redirect(url_for('index'))
     team = Team.query.get_or_404(team_id)
     members = TeamMember.query.filter_by(team_id=team_id).all()
-    return render_template('team_members.html', username=user.username, team=team, members=members, user=user)
+    # Получаем идеи команды
+    team_ideas = Idea.query.filter_by(team_id=team_id).order_by(Idea.id.desc()).all()
+    # Получаем дневниковые записи команды
+    team_diary = DiaryEntry.query.filter_by(team_id=team_id).order_by(DiaryEntry.id.desc()).all()
+    return render_template('team_members.html', username=user.username, team=team, members=members, user=user,
+                           team_ideas=team_ideas, team_diary=team_diary)
 
 
 @app.route('/join_team/<int:team_id>', methods=['POST'])
@@ -500,6 +505,8 @@ def update_diary(entry_id):
         return jsonify({'error': 'Forbidden'}), 403
     entry.text = request.form.get('entry_text')
     entry.tag = request.form.get('tag', 'success')
+    team_id = request.form.get('team_id', type=int)
+    entry.team_id = team_id if team_id else None
     db.session.commit()
     return jsonify({'status': 'success'})
 
