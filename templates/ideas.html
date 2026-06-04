@@ -52,7 +52,8 @@
                      data-visibility="{{ idea.visibility }}"
                      data-license="{{ idea.license }}"
                      data-tags="{{ idea.tags | e }}"
-                     data-date="{{ idea.date }}">
+                     data-date="{{ idea.date }}"
+                     data-team-id="{{ idea.team_id or '' }}">
                     <div class="card-header">
                         <span class="badge {{ 'published' if idea.visibility == 'published' else ('private' if idea.visibility == 'private' else 'draft') }}">
                             {{ '🌍 Опубликована' if idea.visibility == 'published' else ('🔒 Приватная' if idea.visibility == 'private' else '📝 Черновик') }}
@@ -105,7 +106,7 @@
             {% endif %}
         </div>
 
-        <!-- Модальное окно создания идеи (с обновлёнными тегами) -->
+        <!-- Модальное окно создания идеи -->
         <div id="createIdeaModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -152,7 +153,18 @@
                         </select>
                     </div>
 
-                    <!-- НОВЫЙ БЛОК ТЕГОВ -->
+                    <!-- Привязка к команде -->
+                    <div class="form-group">
+                        <label>Привязать к команде (опционально)</label>
+                        <select name="team_id">
+                            <option value="">Без команды</option>
+                            {% for team in user_teams %}
+                                <option value="{{ team.id }}">{{ team.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Блок выбора тегов -->
                     <div class="form-group">
                         <label>Теги (выберите из популярных)</label>
                         <select multiple id="tagSelect" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; min-height: 80px;">
@@ -203,7 +215,7 @@
             </div>
         </div>
 
-        <!-- Модальное окно редактирования идеи (с обновлёнными тегами) -->
+        <!-- Модальное окно редактирования идеи -->
         <div id="editIdeaModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -250,7 +262,18 @@
                         </select>
                     </div>
 
-                    <!-- НОВЫЙ БЛОК ТЕГОВ ДЛЯ РЕДАКТИРОВАНИЯ -->
+                    <!-- Привязка к команде (редактирование) -->
+                    <div class="form-group">
+                        <label>Привязать к команде (опционально)</label>
+                        <select id="editTeamId" name="team_id">
+                            <option value="">Без команды</option>
+                            {% for team in user_teams %}
+                                <option value="{{ team.id }}">{{ team.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Блок тегов -->
                     <div class="form-group">
                         <label>Теги (выберите из популярных)</label>
                         <select multiple id="editTagSelect" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; min-height: 80px;">

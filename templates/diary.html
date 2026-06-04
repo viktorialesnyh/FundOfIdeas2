@@ -29,16 +29,14 @@
             <button class="btn-add" id="toggleFormBtn" style="padding: 8px 16px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer;">+ Запись</button>
         </div>
 
-        <!-- === НАЧАЛО: ДОБАВЛЕН БЛОК ФИЛЬТРОВ === -->
         <div class="diary-filters" style="margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 8px;">
             <button class="filter-btn active" data-filter="all">Все</button>
             <button class="filter-btn" data-filter="success">🟢 Успех</button>
             <button class="filter-btn" data-filter="plan">🔵 Планы</button>
             <button class="filter-btn" data-filter="issue">🔴 Проблема</button>
         </div>
-        <!-- === КОНЕЦ: ДОБАВЛЕН БЛОК ФИЛЬТРОВ === -->
 
-        <!-- Форма добавления -->
+        <!-- Форма добавления с выбором команды -->
         <div class="entry-form-container hidden" id="entryFormContainer">
             <form method="POST" class="entry-form">
                 <textarea name="entry_text" placeholder="Что сделано сегодня? Какие планы или проблемы?" required></textarea>
@@ -48,6 +46,12 @@
                         <label><input type="radio" name="tag" value="plan"> 🔵 Планы</label>
                         <label><input type="radio" name="tag" value="issue"> 🔴 Проблема</label>
                     </div>
+                    <select name="team_id" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+                        <option value="">Личная запись</option>
+                        {% for team in user_teams %}
+                            <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
                     <button type="submit" class="btn-submit">Сохранить</button>
                 </div>
             </form>
@@ -65,9 +69,12 @@
                             {% elif entry.tag == 'plan' %}🔵 Планы
                             {% else %}🔴 Проблема{% endif %}
                         </span>
+                        {% if entry.team %}
+                            <span style="background: #e0e7ff; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">{{ entry.team.name }}</span>
+                        {% endif %}
                         <p style="white-space: pre-wrap; line-height: 1.6; color: #1f2937; margin: 8px 0;">{{ entry.text }}</p>
                         <div class="item-actions">
-                            <button class="action-btn-small" onclick="openEditModal({{ entry.id }}, '{{ entry.text | replace("'", "\\'") }}', '{{ entry.tag }}')">✏️ Редактировать</button>
+                            <button class="action-btn-small" onclick="openEditModal({{ entry.id }}, '{{ entry.text | replace("'", "\\'") }}', '{{ entry.tag }}', {{ entry.team_id or 'null' }})">✏️ Редактировать</button>
                             <button class="action-btn-small delete" onclick="deleteEntry({{ entry.id }})">🗑️ Удалить</button>
                         </div>
                     </div>
@@ -84,7 +91,7 @@
         </div>
     </main>
 
-    <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
+    <!-- Модальное окно редактирования -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -102,6 +109,15 @@
                     </select>
                 </div>
                 <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 500;">Привязать к команде</label>
+                    <select id="editTeamId" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="">Личная запись</option>
+                        {% for team in user_teams %}
+                            <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
                     <label style="display: block; margin-bottom: 6px; font-weight: 500;">Текст</label>
                     <textarea id="editText" rows="4" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
                 </div>
@@ -114,19 +130,11 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-
-    <!-- === НАЧАЛО: СКРИПТЫ === -->
     <script>
-        // Показ/скрытие формы добавления
-        document.getElementById('toggleFormBtn')?.addEventListener('click', () => {
-            document.getElementById('entryFormContainer').classList.toggle('hidden');
-        });
-
         // Фильтрация
         document.addEventListener("DOMContentLoaded", () => {
             const filterBtns = document.querySelectorAll('.filter-btn');
             const items = document.querySelectorAll('.timeline-item');
-
             filterBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     filterBtns.forEach(b => b.classList.remove('active'));
@@ -140,11 +148,18 @@
             });
         });
 
+        // Показ/скрытие формы
+        document.getElementById('toggleFormBtn')?.addEventListener('click', () => {
+            document.getElementById('entryFormContainer').classList.toggle('hidden');
+        });
+
         // Редактирование
-        function openEditModal(id, text, tag) {
+        function openEditModal(id, text, tag, teamId) {
             document.getElementById('editId').value = id;
             document.getElementById('editText').value = text;
             document.getElementById('editTag').value = tag;
+            const teamSelect = document.getElementById('editTeamId');
+            if (teamSelect) teamSelect.value = teamId || '';
             document.getElementById('editModal').classList.add('active');
         }
 
@@ -157,10 +172,12 @@
             const id = document.getElementById('editId').value;
             const text = document.getElementById('editText').value;
             const tag = document.getElementById('editTag').value;
+            const teamId = document.getElementById('editTeamId').value;
 
             const formData = new FormData();
             formData.append('entry_text', text);
             formData.append('tag', tag);
+            if (teamId) formData.append('team_id', teamId);
 
             try {
                 const res = await fetch(`/update_diary/${id}`, {
@@ -168,32 +185,19 @@
                     body: formData,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-
-                if (res.ok) {
-                    location.reload();
-                } else {
-                    alert('Ошибка обновления');
-                }
+                if (res.ok) location.reload();
+                else alert('Ошибка обновления');
             } catch (err) {
                 alert('Ошибка обновления');
             }
         }
 
-        // Удаление
         async function deleteEntry(id) {
             if (!confirm('Удалить эту запись?')) return;
-
             try {
-                const res = await fetch(`/delete_diary/${id}`, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-
-                if (res.ok) {
-                    location.reload();
-                } else {
-                    alert('Ошибка удаления');
-                }
+                const res = await fetch(`/delete_diary/${id}`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (res.ok) location.reload();
+                else alert('Ошибка удаления');
             } catch (err) {
                 alert('Ошибка удаления');
             }
@@ -204,6 +208,5 @@
             if (e.target.id === 'editModal') closeEditModal();
         });
     </script>
-    <!-- === КОНЕЦ: СКРИПТЫ === -->
 </body>
 </html>

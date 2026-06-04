@@ -14,7 +14,6 @@ class User(db.Model):
     city = db.Column(db.String(100), default="Москва, Россия")
     joined_year = db.Column(db.String(10), default="2026")
 
-    # Настройки конфиденциальности
     is_email_visible = db.Column(db.Boolean, default=True)
     is_city_visible = db.Column(db.Boolean, default=True)
     is_photo_visible = db.Column(db.Boolean, default=True)
@@ -44,6 +43,7 @@ class Idea(db.Model):
     license = db.Column(db.String(20), default='all_rights')
     tags = db.Column(db.String(200))
     date = db.Column(db.String(50))
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=True)
 
 
 class DiaryEntry(db.Model):
@@ -52,6 +52,7 @@ class DiaryEntry(db.Model):
     text = db.Column(db.Text, nullable=False)
     tag = db.Column(db.String(50))
     date = db.Column(db.String(50))
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=True)
 
 
 class Skill(db.Model):
@@ -105,6 +106,8 @@ class Team(db.Model):
     date = db.Column(db.String(50))
     leader = db.relationship('User', backref='led_teams', lazy=True)
     members = db.relationship('TeamMember', backref='team', lazy=True)
+    ideas = db.relationship('Idea', backref='team', lazy=True)
+    diary_entries = db.relationship('DiaryEntry', backref='team', lazy=True)
 
 
 class TeamMember(db.Model):

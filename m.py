@@ -1,6 +1,3 @@
-# migrate_db.py
-# Запустите этот файл для добавления колонок parent_id и date в таблицу comment
-
 from app import app
 from data import db
 from sqlalchemy import text
@@ -8,39 +5,35 @@ from sqlalchemy import text
 
 def migrate():
     with app.app_context():
-        print("Начинаю миграцию базы данных...")
-
-        # Добавляем колонку parent_id, если её нет
+        print("Миграция базы данных...")
+        # Предыдущие миграции
         try:
             db.session.execute(text('ALTER TABLE comment ADD COLUMN parent_id INTEGER;'))
-            print("✅ Колонка parent_id добавлена")
-        except Exception as e:
-            if "duplicate column name" in str(e).lower() or "already exists" in str(e).lower():
-                print("ℹ️ Колонка parent_id уже существует")
-            else:
-                print(f"⚠️ Ошибка при добавлении parent_id: {e}")
-
-        # Добавляем колонку date, если её нет
+            print("✅ parent_id добавлен")
+        except:
+            pass
         try:
             db.session.execute(text('ALTER TABLE comment ADD COLUMN date VARCHAR(50);'))
-            print("✅ Колонка date добавлена")
-        except Exception as e:
-            if "duplicate column name" in str(e).lower() or "already exists" in str(e).lower():
-                print("ℹ️ Колонка date уже существует")
-            else:
-                print(f"⚠️ Ошибка при добавлении date: {e}")
+            print("✅ date добавлен")
+        except:
+            pass
 
-        # Заполняем старые записи датой (опционально)
-        from datetime import datetime
-        now = datetime.now().strftime('%d %b %Y, %H:%M')
-        result = db.session.execute(text("SELECT id FROM comment WHERE date IS NULL;"))
-        rows = result.fetchall()
-        if rows:
-            db.session.execute(text(f"UPDATE comment SET date = '{now}' WHERE date IS NULL;"))
-            print(f"✅ Обновлено {len(rows)} старых комментариев (установлена текущая дата)")
+        # Новые колонки
+        try:
+            db.session.execute(text('ALTER TABLE idea ADD COLUMN team_id INTEGER;'))
+            db.session.execute(text('ALTER TABLE idea ADD FOREIGN KEY(team_id) REFERENCES team(id);'))
+            print("✅ team_id в idea добавлен")
+        except Exception as e:
+            print("⚠️ team_id в idea уже есть или ошибка:", e)
+        try:
+            db.session.execute(text('ALTER TABLE diary_entry ADD COLUMN team_id INTEGER;'))
+            db.session.execute(text('ALTER TABLE diary_entry ADD FOREIGN KEY(team_id) REFERENCES team(id);'))
+            print("✅ team_id в diary_entry добавлен")
+        except Exception as e:
+            print("⚠️ team_id в diary_entry уже есть или ошибка:", e)
 
         db.session.commit()
-        print("Миграция завершена успешно!")
+        print("Миграция завершена.")
 
 
 if __name__ == '__main__':
