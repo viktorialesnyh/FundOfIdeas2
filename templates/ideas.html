@@ -105,14 +105,14 @@
             {% endif %}
         </div>
 
-        <!-- Модальное окно создания идеи -->
+        <!-- Модальное окно создания идеи (с обновлёнными тегами) -->
         <div id="createIdeaModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>➕ Создать новую идею</h2>
                     <button class="modal-close" onclick="closeModal()">&times;</button>
                 </div>
-                <form method="POST" action="/create_idea" class="idea-form">
+                <form method="POST" action="/create_idea" class="idea-form" id="createIdeaForm" onsubmit="prepareTags(event)">
                     <div class="form-group">
                         <label>Название идеи *</label>
                         <input type="text" name="title" placeholder="Например: AI-помощник для студентов" required>
@@ -134,7 +134,7 @@
                         <div class="form-group">
                             <label>Видимость</label>
                             <select name="visibility">
-                                <option value="draft"> Черновик</option>
+                                <option value="draft">📝 Черновик</option>
                                 <option value="private">🔒 Приватная</option>
                                 <option value="published">🌍 Опубликовать</option>
                             </select>
@@ -151,10 +151,30 @@
                             <option value="public_domain">🌍 Public Domain</option>
                         </select>
                     </div>
+
+                    <!-- НОВЫЙ БЛОК ТЕГОВ -->
                     <div class="form-group">
-                        <label>Теги (через запятую)</label>
-                        <input type="text" name="tags" placeholder="Python, AI, Mobile">
+                        <label>Теги (выберите из популярных)</label>
+                        <select multiple id="tagSelect" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; min-height: 80px;">
+                            <option value="AI">🤖 AI</option>
+                            <option value="Machine Learning">📊 Machine Learning</option>
+                            <option value="EdTech">🎓 EdTech</option>
+                            <option value="HealthTech">🏥 HealthTech</option>
+                            <option value="FinTech">💰 FinTech</option>
+                            <option value="Startup">🚀 Startup</option>
+                            <option value="Mobile">📱 Mobile</option>
+                            <option value="Web">🌐 Web</option>
+                            <option value="Open Source">🖥️ Open Source</option>
+                            <option value="Design">🎨 Design</option>
+                        </select>
+                        <small>Удерживайте Ctrl (или Cmd) для выбора нескольких</small>
                     </div>
+                    <div class="form-group">
+                        <label>Или добавьте свои теги (через запятую)</label>
+                        <input type="text" id="customTags" placeholder="Например: blockchain, iot, vr">
+                    </div>
+                    <input type="hidden" name="tags" id="finalTags">
+
                     <div class="modal-footer">
                         <button type="button" class="btn-cancel" onclick="closeModal()">Отмена</button>
                         <button type="submit" class="btn-create-idea">Создать идею</button>
@@ -183,14 +203,14 @@
             </div>
         </div>
 
-        <!-- Модальное окно редактирования идеи -->
+        <!-- Модальное окно редактирования идеи (с обновлёнными тегами) -->
         <div id="editIdeaModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>✏️ Редактировать идею</h2>
                     <button class="modal-close" onclick="closeAnyModal('editIdeaModal')">&times;</button>
                 </div>
-                <form id="editForm" method="POST" class="idea-form">
+                <form id="editForm" method="POST" class="idea-form" onsubmit="prepareEditTags(event)">
                     <div class="form-group">
                         <label>Название идеи *</label>
                         <input type="text" id="editTitle" name="title" required>
@@ -212,7 +232,7 @@
                         <div class="form-group">
                             <label>Видимость</label>
                             <select id="editVisibility" name="visibility">
-                                <option value="draft"> Черновик</option>
+                                <option value="draft">📝 Черновик</option>
                                 <option value="private">🔒 Приватная</option>
                                 <option value="published">🌍 Опубликовать</option>
                             </select>
@@ -229,10 +249,30 @@
                             <option value="public_domain">🌍 Public Domain</option>
                         </select>
                     </div>
+
+                    <!-- НОВЫЙ БЛОК ТЕГОВ ДЛЯ РЕДАКТИРОВАНИЯ -->
                     <div class="form-group">
-                        <label>Теги (через запятую)</label>
-                        <input type="text" id="editTags" name="tags" placeholder="Python, AI, Mobile">
+                        <label>Теги (выберите из популярных)</label>
+                        <select multiple id="editTagSelect" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; min-height: 80px;">
+                            <option value="AI">🤖 AI</option>
+                            <option value="Machine Learning">📊 Machine Learning</option>
+                            <option value="EdTech">🎓 EdTech</option>
+                            <option value="HealthTech">🏥 HealthTech</option>
+                            <option value="FinTech">💰 FinTech</option>
+                            <option value="Startup">🚀 Startup</option>
+                            <option value="Mobile">📱 Mobile</option>
+                            <option value="Web">🌐 Web</option>
+                            <option value="Open Source">🖥️ Open Source</option>
+                            <option value="Design">🎨 Design</option>
+                        </select>
+                        <small>Удерживайте Ctrl (или Cmd) для выбора нескольких</small>
                     </div>
+                    <div class="form-group">
+                        <label>Или добавьте свои теги (через запятую)</label>
+                        <input type="text" id="editCustomTags" placeholder="Например: blockchain, iot, vr">
+                    </div>
+                    <input type="hidden" name="tags" id="editFinalTags">
+
                     <div class="modal-footer">
                         <button type="button" class="btn-cancel" onclick="closeAnyModal('editIdeaModal')">Отмена</button>
                         <button type="submit" class="btn-create-idea">💾 Сохранить изменения</button>
@@ -241,7 +281,7 @@
             </div>
         </div>
 
-        <!-- Модальное окно комментариев (асинхронное, с ответами) -->
+        <!-- Модальное окно комментариев -->
         <div id="commentsModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
