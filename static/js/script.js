@@ -142,30 +142,116 @@ function closeAnyModal(id) { const m = document.getElementById(id); if(m) m.clas
 
 function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
-// === КОММЕНТАРИИ ===
+// === НОВЫЕ ФУНКЦИИ ДЛЯ КОММЕНТАРИЕВ (АСИНХРОННЫЕ, С ОТВЕТАМИ) ===
 let currentIdeaIdForComments = null;
+
 async function openCommentsModal(ideaId) {
     currentIdeaIdForComments = ideaId;
-    const form = document.getElementById('commentForm');
-    if (form) form.action = `/add_comment/${ideaId}`;
+    document.getElementById('commentText').value = '';
+    document.getElementById('commentParentId').value = '';
     document.getElementById('commentsModal').classList.add('active');
-    const list = document.querySelector('#commentsModal .comments-list');
+    await loadComments(ideaId);
+}
+
+async function loadComments(ideaId) {
+    const list = document.getElementById('commentsList');
     list.innerHTML = '<p class="no-comments">Загрузка...</p>';
     try {
         const res = await fetch(`/get_comments/${ideaId}`);
         if (!res.ok) throw new Error('Fail');
         const data = await res.json();
-        list.innerHTML = '';
-        if (data.length === 0) list.innerHTML = '<p class="no-comments">Пока нет комментариев.</p>';
-        else data.forEach(c => {
-            const item = document.createElement('div'); item.className = 'comment-item';
-            item.innerHTML = `<div class="comment-header"><span class="comment-author">${escapeHtml(c.author)}</span></div><p class="comment-text">${escapeHtml(c.text)}</p>`;
-            list.appendChild(item);
+
+        const commentsById = {};
+        data.forEach(c => { commentsById[c.id] = c; c.children = []; });
+        const roots = [];
+        data.forEach(c => {
+            if (c.parent_id && commentsById[c.parent_id]) {
+                commentsById[c.parent_id].children.push(c);
+            } else {
+                roots.push(c);
+            }
         });
-    } catch (e) { list.innerHTML = '<p class="no-comments">Ошибка загрузки.</p>'; }
+
+        function renderComment(comment) {
+            const div = document.createElement('div');
+            div.className = 'comment-item';
+            div.setAttribute('data-comment-id', comment.id);
+            div.innerHTML = `
+                <div class="comment-header">
+                    <span class="comment-author">
+                        <a href="/user/${comment.author_id}" style="text-decoration: none; color: #374151;">${escapeHtml(comment.author)}</a>
+                    </span>
+                    <span class="comment-date">${escapeHtml(comment.date)}</span>
+                </div>
+                <p class="comment-text">${escapeHtml(comment.text)}</p>
+                <button class="reply-btn" onclick="showReplyForm(${comment.id})">Ответить</button>
+                <div class="replies" style="margin-left: 30px; margin-top: 10px;"></div>
+            `;
+            const repliesContainer = div.querySelector('.replies');
+            if (comment.children && comment.children.length) {
+                comment.children.forEach(child => {
+                    repliesContainer.appendChild(renderComment(child));
+                });
+            }
+            return div;
+        }
+
+        list.innerHTML = '';
+        if (roots.length === 0) {
+            list.innerHTML = '<p class="no-comments">Пока нет комментариев.</p>';
+        } else {
+            roots.forEach(root => list.appendChild(renderComment(root)));
+        }
+    } catch (e) {
+        list.innerHTML = '<p class="no-comments">Ошибка загрузки.</p>';
+    }
 }
-function closeCommentsModal() { document.getElementById('commentsModal').classList.remove('active'); currentIdeaIdForComments = null; }
-document.addEventListener('click', (e) => { if (e.target.id === 'commentsModal') closeCommentsModal(); });
+
+function showReplyForm(commentId) {
+    document.getElementById('commentParentId').value = commentId;
+    const textarea = document.getElementById('commentText');
+    textarea.focus();
+    textarea.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function submitComment() {
+    const ideaId = currentIdeaIdForComments;
+    const text = document.getElementById('commentText').value.trim();
+    const parentId = document.getElementById('commentParentId').value;
+    if (!text) return;
+
+    const formData = new FormData();
+    formData.append('comment_text', text);
+    if (parentId) formData.append('parent_id', parentId);
+
+    try {
+        const res = await fetch(`/add_comment/${ideaId}`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        });
+        if (!res.ok) throw new Error('Network error');
+        const result = await res.json();
+        if (result.success) {
+            document.getElementById('commentText').value = '';
+            document.getElementById('commentParentId').value = '';
+            await loadComments(ideaId);
+            updateCommentsCount(ideaId, result.comments_count);
+        }
+    } catch (err) {
+        alert('Ошибка при отправке комментария');
+    }
+}
+
+function updateCommentsCount(ideaId, newCount) {
+    const btn = document.getElementById(`commentsBtn-${ideaId}`);
+    if (btn) btn.innerHTML = `💬 Комментарии (${newCount})`;
+}
+
+function closeCommentsModal() {
+    document.getElementById('commentsModal').classList.remove('active');
+    currentIdeaIdForComments = null;
+}
 
 // === ЛАЙКИ В ЛЕНТЕ ===
 function toggleLike(btn) {
@@ -186,9 +272,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBtn = document.getElementById('feedSearchClear');
     const loading = document.getElementById('feedLoading');
     const feedTitle = document.getElementById('feedTitle');
-    let originalHTML = feedContainer.innerHTML; // Кэш рекомендаций
+    let originalHTML = feedContainer.innerHTML;
 
-    // Показываем крестик при вводе текста
     searchInput.addEventListener('input', () => {
         if (searchInput.value.trim()) {
             clearBtn.classList.remove('hidden');
@@ -197,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Поиск по нажатию Enter
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const q = searchInput.value.trim();
@@ -207,7 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Кнопка очистки (возврат к рекомендациям)
     clearBtn.addEventListener('click', () => {
         searchInput.value = '';
         clearBtn.classList.add('hidden');
@@ -252,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="feed-tags card-tags">${tagsHtml}</div>
                 <div class="feed-actions card-actions">
                     <button class="action-btn" onclick="openViewModal(this.closest('.idea-card'))">🔍 Открыть</button>
-                    <button class="action-btn outline" onclick="openCommentsModal(${i.id})">💬 Комментарии</button>
+                    <button class="action-btn outline" id="commentsBtn-${i.id}" onclick="openCommentsModal(${i.id})">💬 Комментарии (${i.comments_count || 0})</button>
                 </div>
             </article>`;
         });
@@ -264,10 +347,10 @@ document.addEventListener('DOMContentLoaded', () => {
         feedTitle.textContent = 'Рекомендации для вас';
     }
 });
+
 // === АВТО-ПЕРЕКЛЮЧЕНИЕ ВКЛАДКИ ПРИ ОШИБКАХ ===
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
-    // Если в адресе есть ?tab=register, переключаемся на регистрацию
     if (params.get('tab') === 'register') {
         switchTab('register');
     }

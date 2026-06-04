@@ -1,5 +1,6 @@
 from .database import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 
 class User(db.Model):
@@ -73,6 +74,7 @@ class TeamProfile(db.Model):
     date = db.Column(db.String(50))
     owner = db.relationship('User', backref='team_profiles', lazy=True)
 
+
 class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -86,8 +88,13 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     idea_id = db.Column(db.Integer, db.ForeignKey('idea.id'), nullable=False)
     text = db.Column(db.Text, nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)
+    date = db.Column(db.String(50), default=lambda: datetime.now().strftime('%d %b %Y, %H:%M'))
+
     user = db.relationship('User', backref='comments', lazy=True)
     idea = db.relationship('Idea', backref='comments', lazy=True)
+    replies = db.relationship('Comment', backref=db.backref('parent', remote_side=[id]), lazy=True)
+
 
 # === МОДЕЛИ КОМАНД ===
 
