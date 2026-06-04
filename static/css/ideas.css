@@ -1,356 +1,197 @@
-/* === СТРАНИЦА МОИ ИДЕИ === */
-.ideas-main { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+.ideas-main {
+  max-width: 1300px;
+  margin: 40px auto;
+  padding: 0 24px;
+}
 
 .ideas-header {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
-.ideas-header h1 { font-size: 1.8rem; color: #111827; margin: 0; }
+
+.ideas-header h1 {
+  font-size: 2rem;
+  margin: 0;
+}
 
 .btn-create {
-    background: #374151; color: white; border: none; padding: 10px 20px;
-    border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s;
+  background: var(--accent-binding);
+  color: white;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 40px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
 }
-.btn-create:hover { background: #1f2937; }
+
+.btn-create:hover {
+  background: var(--accent-binding-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(155,94,60,0.2);
+}
 
 .ideas-controls {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.filters { display: flex; gap: 10px; }
-.filter-btn {
-    background: white; border: 1px solid #e5e7eb; padding: 8px 16px;
-    border-radius: 20px; cursor: pointer; font-size: 0.9rem; color: #4b5563; transition: 0.2s;
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
+
+.filter-btn {
+  background: var(--bg-white);
+  border: 1px solid var(--border-dark);
+  padding: 8px 20px;
+  border-radius: 40px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-pencil);
+  transition: var(--transition-base);
+}
+
 .filter-btn.active, .filter-btn:hover {
-    background: #374151; color: white; border-color: #374151;
+  background: var(--accent-binding);
+  color: white;
+  border-color: var(--accent-binding);
 }
 
 .search-box input {
-    padding: 10px 15px; border: 1px solid #e5e7eb; border-radius: 8px;
-    width: 250px; outline: none; font-size: 0.9rem;
+  padding: 10px 18px;
+  border: 1px solid var(--border-paper);
+  border-radius: 60px;
+  width: 280px;
+  outline: none;
+  font-size: 0.9rem;
+  transition: var(--transition-base);
 }
-.search-box input:focus { border-color: #374151; }
+
+.search-box input:focus {
+  border-color: var(--accent-binding);
+  box-shadow: 0 0 0 3px rgba(155,94,60,0.1);
+}
 
 /* Сетка карточек */
 .ideas-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 28px;
 }
 
 .idea-card {
-    background: white; border: 1px solid #e5e7eb; border-radius: 12px;
-    padding: 20px; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column;
+  background: var(--bg-white);
+  border: 1px solid var(--border-paper);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  transition: var(--transition-base);
+  display: flex;
+  flex-direction: column;
 }
-.idea-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
 
-.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.date { font-size: 0.8rem; color: #9ca3af; }
+.idea-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-medium);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
 
 .badge {
-    font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 500;
+  font-size: 0.7rem;
+  padding: 4px 12px;
+  border-radius: 30px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
-.badge.published { background: #d1fae5; color: #065f46; }
+
+.badge.published { background: #dcfce7; color: #166534; }
 .badge.draft { background: #f3f4f6; color: #4b5563; }
+.badge.private { background: #fee2e2; color: #991b1b; }
 
-.idea-card h3 { font-size: 1.1rem; margin: 0 0 8px 0; color: #111827; }
-.idea-card p { font-size: 0.9rem; color: #4b5563; line-height: 1.5; margin-bottom: 15px; flex-grow: 1; }
+.idea-card h3 {
+  font-size: 1.2rem;
+  margin: 0 0 12px 0;
+  font-weight: 700;
+  line-height: 1.3;
+}
 
-.card-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+.idea-card p {
+  font-size: 0.9rem;
+  color: var(--text-pencil);
+  line-height: 1.5;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
 .card-tags span {
-    background: #f9fafb; border: 1px solid #e5e7eb; padding: 4px 10px;
-    border-radius: 6px; font-size: 0.8rem; color: #6b7280;
+  background: var(--bg-paper);
+  border: 1px solid var(--border-paper);
+  padding: 4px 12px;
+  border-radius: 30px;
+  font-size: 0.75rem;
+  color: var(--text-pencil);
 }
 
-.card-actions { display: flex; gap: 10px; margin-top: auto; }
+.card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
 .action-btn {
-    flex: 1; padding: 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
-}
-.action-btn { background: #374151; color: white; }
-.action-btn:hover { background: #1f2937; }
-.action-btn.outline { background: white; border: 1px solid #d1d5db; color: #374151; }
-.action-btn.outline:hover { background: #f9fafb; }
-
-/* Скрытие карточек при фильтрации */
-.idea-card.hidden { display: none; }
-/* === МОДАЛЬНЫЕ ОКНА === */
-.modal {
-    display: none; /* Скрыто по умолчанию */
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Затемнение фона */
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+  flex: 1;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 40px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+  background: var(--bg-white);
+  border: 1px solid var(--border-dark);
+  color: var(--text-pencil);
 }
 
-.modal.active {
-    display: flex;
-    opacity: 1;
+.action-btn:hover {
+  background: var(--bg-paper);
+  border-color: var(--accent-binding);
+  color: var(--accent-binding);
+  transform: translateY(-2px);
 }
 
-.modal-content {
-    background: white;
-    padding: 30px;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    animation: slideIn 0.3s ease;
+.action-btn.outline {
+  background: transparent;
 }
 
-@keyframes slideIn {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #e5e7eb;
-    padding-bottom: 10px;
-}
-
-.modal-header h2 {
-    font-size: 1.4rem;
-    color: #111827;
-    margin: 0;
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #6b7280;
-    transition: color 0.2s;
-}
-
-.modal-close:hover {
-    color: #111827;
-}
-
-/* Стили для формы внутри модалки (используем существующие классы) */
-.idea-form .form-group {
-    margin-bottom: 15px;
-}
-
-.idea-form label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: #374151;
-    font-size: 0.9rem;
-}
-
-.idea-form input, 
-.idea-form textarea, 
-.idea-form select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.idea-form input:focus, 
-.idea-form textarea:focus, 
-.idea-form select:focus {
-    border-color: #374151;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 20px;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 15px;
-}
-
-.btn-cancel {
-    background: white;
-    border: 1px solid #d1d5db;
-    color: #374151;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.btn-cancel:hover {
-    background: #f9fafb;
-}
-
-.btn-create-idea {
-    background: #374151;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.btn-create-idea:hover {
-    background: #1f2937;
-}
-
-/* Стили для бейджей в просмотре */
-.badge.private {
-    background: #fef3c7;
-    color: #92400e;
-}
-/* === ИСПРАВЛЕНИЕ РАСПОЛОЖЕНИЯ === */
-
-/* Карточка идеи */
-.idea-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Блок с лайком - убираем вниз карточки */
-.idea-card .like-block {
-    margin-top: auto;
-    padding-top: 12px;
-    border-top: 1px solid #f3f4f6;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Комментарии - скрываем из карточки, показываем только в модалке */
-.idea-card .comments-block {
-    display: none;
-}
-
-/* В модальном окне показываем всё */
-.modal .idea-form {
-    display: flex;
-    flex-direction: column;
-}
-
-/* Лайки в модалке */
-.modal .like-section {
-    margin: 20px 0;
-    padding: 16px;
-    background: #f9fafb;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-/* Комментарии в модалке */
-.modal .comments-section {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 2px solid #e5e7eb;
-}
-
-.modal .comments-section h3 {
-    font-size: 1.1rem;
-    margin-bottom: 16px;
-    color: #111827;
-}
-
-/* Форма комментария */
-.modal .comment-form {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.modal .comment-form textarea {
-    flex: 1;
-    min-height: 80px;
-    padding: 12px;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 8px;
-    resize: vertical;
-    font-family: inherit;
-    font-size: 0.9rem;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.modal .comment-form textarea:focus {
-    border-color: #374151;
-}
-
-.modal .comment-form button {
-    background: #374151;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    align-self: flex-end;
-}
-
-/* Список комментариев */
-.modal .comments-list {
-    max-height: 300px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.modal .comment-item {
-    background: #f9fafb;
-    padding: 14px;
-    border-radius: 8px;
-    border-left: 3px solid #374151;
-}
-
-.modal .comment-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 6px;
-}
-
-.modal .comment-author {
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.9rem;
-}
-
-.modal .comment-date {
-    color: #9ca3af;
-    font-size: 0.8rem;
-}
-
-.modal .comment-text {
-    margin: 0;
-    color: #111827;
-    line-height: 1.5;
-    font-size: 0.9rem;
-}
-
-/* Пустое состояние */
-.modal .no-comments {
-    text-align: center;
-    color: #9ca3af;
-    padding: 30px;
-    font-style: italic;
-}
+/* Модалки (переиспользуются из dashboard.css) */
+.hidden { display: none; }
